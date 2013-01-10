@@ -332,6 +332,7 @@ $string['switchtovariant'] = 'Switch to arbitrary variant';
 $string['testcasexresult'] = 'Test case {$a->no} {$a->result}';
 $string['testingquestion'] = 'Testing question {$a}';
 $string['testinputs'] = 'Test inputs';
+$string['testinputsimpwarning'] = 'Please note that test inputs are always <em>unsimplified</em> regardless of the question or PRT option setting.  Please use <tt>ev(...,simp)</tt> to simplify part or all of the test input expressions.';
 $string['testthisvariant'] = 'Switch to test this variant';
 $string['undeploy'] = 'Un-deploy';
 $string['deploymany'] = 'Attempt to automatically deploy the following number of variants:';
@@ -339,12 +340,6 @@ $string['deploymanynotes'] = 'Note, STACK will give up if there are 3 failed att
 $string['deploymanyerror'] = 'Error in user input: cannot deploy "{$a->err}" variants.';
 $string['deploymanynonew'] = 'Too many repeated existing question notes were generated.';
 $string['deploymanysuccess'] = 'Number of new variants successfully created, tested and deployed: {$a->no}.';
-
-// Strings used by the reporting script.
-$string['questionreporting'] = 'Report on attempts at one question.';
-$string['questionreportingscore'] = 'Score';
-$string['questionreportingsummary'] = 'Input summary';
-$string['questionreportingtotal'] = 'Total';
 
 // Support scripts (CAS chat, healthcheck, etc.)
 $string['all'] = 'All';

@@ -174,11 +174,12 @@ StackDISP(expr,m):= block([str:""],
  /* LaTeX display */
  if OPT_OUTPUT="LaTeX" then
   if not(ev(elementp(m,{"","i","d"}),simp)) then print(concat("ERROR: illegal delimiter option found: ",m)),
-  str:block([expstr,offset,ld,rd],
+  str:block([expru,expstr,offset,ld,rd],
           ld:"",rd:"",
           if m="i" then (ld:"\\(",rd:"\\)"),
-          if m="d" then (ld:"\\[",rd:"\\]"),   
-          expstr:tex(expr,false),
+          if m="d" then (ld:"\\[",rd:"\\]"),
+          expru:unary_minus_sort(expr),   
+          expstr:tex(expru,false),
           /* Remove $$'s from Maxima's TEX command */
           if ?subseq(expstr,0,2)="$$" then expstr:concat(ld,?subseq(expstr,2,ev(?length(expstr)-3,simp)),rd) 
           /* Remove \begin{verbatim}'s from Maxima's TEX command */
@@ -214,6 +215,69 @@ detexdecorate(ex):=block([argsex],
   if op(ex)="/" then return(detexdecorate(argsex[1])/detexdecorate(argsex[2])),
   map(detexdecorate,ex)
 )$
+
+/* ********************************** */
+/* Display: Sort out the unary minus  */
+/* ********************************** */
+
+/* To see an interesting example, see the following.
+   simp:false;
+   p:y^3-2*y^2-8*y;
+   ?print(p);
+   
+   In the structure of this expression the first negative coefficient is -(2y^2) BUT the second is -(8)*y.
+
+   ((MPLUS) ((MEXPT) $Y 3) ((MMINUS) ((MTIMES) 2 ((MEXPT) $Y 2))) ((MTIMES) ((MMINUS) 8) $Y))
+
+   This again is a crucial but subtle difference....
+
+   The following functions sort this out, pulling "-" out the front in a specific situation: that of
+   a product with a negative number at the front.
+*/
+
+/* Traverses an entire expression and ensures that "-"(number) really is the negative number.  */
+/* Although we ultimately need to transform all integers back into "-"(number) for correct display */
+/* this function gives us a definite form for comparison purposes in the interim.*/
+unary_minus_traverse(ex):=block(
+  if atom(ex) then return(ex),
+  if op(ex)="-" and numberp(first(args(ex))) then return(ev(ex,simp)),
+  apply(op(ex),map(unary_minus_traverse,args(ex)))
+)$
+
+
+/* Pulls out "-" to the front of any expression in a sum of products which needs it. */
+/* For example,   -(2*y^2) is ok                                                     */
+/* But            (-3)*7 is not.                                                     */
+unary_minus_pull(ex):=block([ex2],
+  if atom(ex) then return(ex),
+  ex2:apply(op(ex),map(unary_minus_pull,args(ex))),
+  if op(ex)="+" then ex2:apply("+",map(unary_minus_pull_helper,args(ex2))),
+  if op(ex)="*" then ex2:unary_minus_pull_helper(ex2),
+  return(ex2)
+)$
+
+/* Looks for                                     */
+/* - a negative number                           */
+/* - a product of an number and something.       */
+/* Makes sure any minus sign is the top element  */
+unary_minus_pull_helper(ex):=block([fe],
+  if numberp(ex) and is(ex<0) then return(-(ev(-1*ex,simp))),  /* Turns -8 into "-"(8) */
+  if atom(ex) then return(ex),
+  fe:first(args(ex)), /* First element of the arguments.  Is this a negative number? */
+  if op(ex)="*" then
+     if numberp(fe) and is(fe<0) 
+         then return(-(apply("*",append([ev(-fe,simp)],rest(args(ex)))))),
+  return(ex)
+)$
+
+/* Sorts out display of expressions in the case simp:false */
+unary_minus_sort(ex):= block([ex2],
+  if simp or atom(ex) then return(ex),
+  if op(ex)=":=" then return(ex),
+  ex2:unary_minus_traverse(ex),
+  return(unary_minus_pull(ex2))
+)$
+
 
 /* ****************************************************************** */
 /* Evaluate variables are return errors, display, and content forms   */
@@ -973,21 +1037,22 @@ ATGTE(SA,SB) :=
 /*     and p does not factor over the **rationals**                     */
 
 /* Is p an irreducible term in v, over the rationals Q? */
-/* Returns a list, of [true/false , FeedBack] */
+/* Returns a list, of [true/false, FeedBack, true/false] */
+/* The third argument is the special case when we just have an integer factor to pull out. Needed for PartFrac. */
 irred_Q(p,v) := block([ret,deg,cl,ci],
   deg:ev(hipow(expand(p),v),simp),
   /* Now perform the general test */
-  cl:ev(map(second,coeff_list_nz(p,v)),simp),
+  cl:ev(map(second,coeff_list_nz(expand(p),v)),simp),
   /* all coefficients of p are integers?  (note, negative number don't count as integers here!)  */
   ci:all_listp(lambda([ex],integerp(ev(abs(ex),simp))),cl),
   /* General starting position */
-  ret:[factorp(p),""],
+  ret:[factorp(p),"",false],
   /* Special cases */
-  if deg=0 then ret:[true,""],
+  if deg=0 then ret:[true,"",false],
   /* Special situation for the linear case to avoid strange results */
   if deg=1 then block([lt],
     lt:ev(bothcoef(p,v),simp),
-    if lt[1]=1 or lt[2]=1 then ret:[true,""]
+    if lt[1]=1 or lt[2]=1 then ret:[true,"",false]
   ),
   /* Special case of quadratics, which are irreducible over the rationals */
   if deg=2 then block([a,b,c,q],
@@ -995,31 +1060,31 @@ irred_Q(p,v) := block([ret,deg,cl,ci],
        a:ev(coeff(q,v,2),simp),
        b:ev(coeff(q,v,1),simp),
        c:ev(coeff(q,v,0),simp),
-       if (b=0 and c=0 and a>1 and ratnump(ev(sqrt(a),simp))) then ret:[true,StackAddFeedback("","irred_Q_optional_fac",StackDISP(p,"i"))]
-       else if (b=0 and c=0) then ret:[true,""]
-       else if ratnump(ev(sqrt(b^2-4*a*c),simp)) then ret:[false,""]
+       if (b=0 and c=0 and a>1 and ratnump(ev(sqrt(a),simp))) then ret:[true,StackAddFeedback("","irred_Q_optional_fac",StackDISP(p,"i")),false]
+       else if (b=0 and c=0) then ret:[true,"",false]
+       else if ratnump(ev(sqrt(b^2-4*a*c),simp)) then ret:[false,"",false]
   ),
   /* Check we have a common integer factor: note can't use GCD function which only allows 2 arguments */
-  if length(cl)>1 and ci and commonfaclist(cl)>1 then ret:[false,StackAddFeedback("","irred_Q_commonint")],
-  /* Check we have a common integer factor: note can't use GCD function which only allows 2 arguments */
+  if length(cl)>1 and ci and commonfaclist(cl)>1 then ret:[false,StackAddFeedback("","irred_Q_commonint"),true],
   if deg>2 then block([q],
     /* take out any integer common factor */
     q:p,
-    if length(cl)>1 and ci then q:expand(p/commonfaclist(cl)),
-    if is(q#factor(q)) then ret:[false,StackAddFeedback("","irred_Q_common_fac")]
+    if length(cl)>1 and ci then q:ev(expand(p/commonfaclist(cl)),simp),
+    if is(ev(q#factor(q),simp)) then ret:[false,ret[2],false]
   ),
   return(ret)
 );
 
-/* Is p a power of an irreducible term in v, over the rationals Q? */ /* 
-Returns true/false */ 
+/* Is p a power of an irreducible term in v, over the rationals Q, disregarding the special case of a numerical factor? */ 
+/* Only used by ATPartFrac */ 
+/* Returns true/false */ 
 irred_power_Qp(p,v) := block([ret],
  if safe_op(p)="^" then ret:irred_Q(first(args(p)),v) else ret:irred_Q(p,v),
- if second(ret)="stack_trans('irred_Q_commonint')\; " then true else first(ret)
+ if third(ret) then true else first(ret)
 ); 
+
 /* Picks apart an expression p of v, and gives some feedback */
 /* on why this is not a factored expression */
-
 FacForm_UnPick(p,v) := block([negdistrib,PARTSWITCH,fb,i,irred,res],
   negdistrib:false,
   partswitch:true,
@@ -1696,9 +1761,23 @@ assess(ex1,ex2):=block([ret],
     return("")
 )$
 
+/* ****************************************************** */
+/*                                                        */
+/* Reporting functions                                    */
+/*                                                        */
+/* ****************************************************** */
+
+STACKanalysis(A):=block([l0,l1,l2,l3],
+  l0:maplist(ineqorder,A),
+  l1:listify(setify(fullratsimp(l0))),
+  l2:maplist(lambda([ex],setify(sublist(A,lambda([ex2],second(ATAlgEquiv(ex2,ex)))))),l1),
+  l3:maplist(lambda([ex],length(sublist(A,lambda([ex2],second(ATAlgEquiv(ex2,ex)))))),l1),
+  transpose(matrix(l1,l2,l3))
+)$
+
 /* Slight hack to compile these functions and hence suppress warnings. */
 load(linearalgebra);
 
 /* Stack expects some output */
-stackmaximaversion:2012121400$
-print("[ STACK-Maxima started, library version 2012121400 ]")$
+stackmaximaversion:2012122800$
+print("[ STACK-Maxima started, library version 2012122800 ]")$
