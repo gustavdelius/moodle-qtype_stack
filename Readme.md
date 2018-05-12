@@ -1,33 +1,25 @@
-# STACK 3.4
+# STACK 4.1
 
-[STACK](https://github.com/maths/moodle-qtype_stack/blob/master/doc/en/About/index.md)
-is an open-source system for computer-aided assessment in Mathematics and related
-disciplines, with emphasis on formative assessment.
+[STACK](https://github.com/maths/moodle-qtype_stack/blob/master/doc/en/About/index.md) is an assessment system for mathematics, science and related disciplines.
 
-STACK was created by [Chris Sangwin](http://www.maths.ed.ac.uk/~csangwin/) of
-the University of Edinburgh, and includes the work of
-[other contributors](https://github.com/maths/moodle-qtype_stack/blob/master/doc/en/About/Credits.md).
+STACK was created by [Chris Sangwin](http://www.maths.ed.ac.uk/~csangwin/) of the University of Edinburgh, and includes the work of many [other contributors](https://github.com/maths/moodle-qtype_stack/blob/master/doc/en/About/Credits.md). A demonstration server is available in Edinburgh:  [https://stack.maths.ed.ac.uk/demo](https://stack.maths.ed.ac.uk/demo).
 
+STACK is based on continuing research and use at the University of Edinburgh, the Open University, Aalto, Loughborough University, the University of Birmingham and others.
 
 ## Current state of development
 
-Stack 3.4 is a point release containing a number of recent bug fixes an minor
-new features and improvements, based on continuing use at Loughborough
-University, the Open University and the University of Birmingham.
+STACK 4.1 contains some important new features, and a number of interface improvements and bug fixes.
 
-Please continue to report any bugs you find at
-https://github.com/maths/moodle-qtype_stack/issues.
+**Note: please read the release notes before upgrading from STACK 3.X to STACK 4.X.  STACK 4.0 represents a major release of STACK and is a non-reversible change, with important differences which break back-compatability. Especially, note the [conversion of old materials](https://github.com/maths/moodle-qtype_stack/blob/master/doc/en/Authoring/ImportExport.md#migrating-stack-3-questions-to-stack-4).**
 
-The [current state of development](https://github.com/maths/moodle-qtype_stack/blob/master/doc/en/Developer/Development_track.md)
-is explain more fully in the [developer documentation](https://github.com/maths/moodle-qtype_stack/blob/master/doc/en/Developer/index.md).
+Please continue to report any bugs you find at https://github.com/maths/moodle-qtype_stack/issues.
+
+The [current state of development](https://github.com/maths/moodle-qtype_stack/blob/master/doc/en/Developer/Development_track.md) is explain more fully in the [developer documentation](https://github.com/maths/moodle-qtype_stack/blob/master/doc/en/Developer/index.md).
 
 
 ## Documentation
 
-The [documentation is here](https://github.com/maths/moodle-qtype_stack/blob/master/doc/en/index.md),
-including the
-[installation instructions](https://github.com/maths/moodle-qtype_stack/blob/master/doc/en/Installation/index.md).
-
+The [documentation is here](https://github.com/maths/moodle-qtype_stack/blob/master/doc/en/index.md), including the [installation instructions](https://github.com/maths/moodle-qtype_stack/blob/master/doc/en/Installation/index.md).
 
 ## License
 

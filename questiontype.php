@@ -1,5 +1,5 @@
 <?php
-// This file is part of Stack - http://stack.bham.ac.uk/
+// This file is part of Stack - http://stack.maths.ed.ac.uk/
 //
 // Stack is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -43,6 +43,8 @@ class qtype_stack extends question_type {
         if (!empty($fromform->fixdollars)) {
             $this->fix_dollars_in_form_data($fromform);
         }
+
+        $fromform->penalty = stack_utils::fix_approximate_thirds($fromform->penalty);
 
         return parent::save_question($question, $fromform);
     }
@@ -88,6 +90,7 @@ class qtype_stack extends question_type {
             $options = new stdClass();
             $options->questionid = $fromform->id;
             $options->questionvariables = '';
+            $options->questionnote = '';
             $options->specificfeedback = '';
             $options->prtcorrect = '';
             $options->prtpartiallycorrect = '';
@@ -102,6 +105,7 @@ class qtype_stack extends question_type {
         $options->questionnote              = $fromform->questionnote;
         $options->questionsimplify          = $fromform->questionsimplify;
         $options->assumepositive            = $fromform->assumepositive;
+        $options->assumereal                = $fromform->assumereal;
         $options->prtcorrect                = $this->import_or_save_files($fromform->prtcorrect,
                     $context, 'qtype_stack', 'prtcorrect', $fromform->id);
         $options->prtcorrectformat          = $fromform->prtcorrect['format'];
@@ -141,6 +145,7 @@ class qtype_stack extends question_type {
             $input->strictsyntax       = $fromform->{$inputname . 'strictsyntax'};
             $input->insertstars        = $fromform->{$inputname . 'insertstars'};
             $input->syntaxhint         = $fromform->{$inputname . 'syntaxhint'};
+            $input->syntaxattribute    = $fromform->{$inputname . 'syntaxattribute'};
             $input->forbidwords        = $fromform->{$inputname . 'forbidwords'};
             $input->allowwords         = $fromform->{$inputname . 'allowwords'};
             $input->forbidfloat        = $fromform->{$inputname . 'forbidfloat'};
@@ -244,7 +249,8 @@ class qtype_stack extends question_type {
                 $node->quiet               = $fromform->{$prtname . 'quiet'}[$nodename];
                 $node->truescoremode       = $fromform->{$prtname . 'truescoremode'}[$nodename];
                 $node->truescore           = $fromform->{$prtname . 'truescore'}[$nodename];
-                $node->truepenalty         = $fromform->{$prtname . 'truepenalty'}[$nodename];
+                $node->truepenalty         = stack_utils::fix_approximate_thirds(
+                                $fromform->{$prtname . 'truepenalty'}[$nodename]);
                 $node->truenextnode        = $fromform->{$prtname . 'truenextnode'}[$nodename];
                 $node->trueanswernote      = $fromform->{$prtname . 'trueanswernote'}[$nodename];
                 $node->truefeedback        = $this->import_or_save_files(
@@ -253,7 +259,8 @@ class qtype_stack extends question_type {
                 $node->truefeedbackformat  = $fromform->{$prtname . 'truefeedback'}[$nodename]['format'];
                 $node->falsescoremode      = $fromform->{$prtname . 'falsescoremode'}[$nodename];
                 $node->falsescore          = $fromform->{$prtname . 'falsescore'}[$nodename];
-                $node->falsepenalty        = $fromform->{$prtname . 'falsepenalty'}[$nodename];
+                $node->falsepenalty        = stack_utils::fix_approximate_thirds(
+                                $fromform->{$prtname . 'falsepenalty'}[$nodename]);
                 $node->falsenextnode       = $fromform->{$prtname . 'falsenextnode'}[$nodename];
                 $node->falseanswernote     = $fromform->{$prtname . 'falseanswernote'}[$nodename];
                 $node->falsefeedback        = $this->import_or_save_files(
@@ -343,7 +350,7 @@ class qtype_stack extends question_type {
         $question->inputs = $DB->get_records('qtype_stack_inputs',
                 array('questionid' => $question->id), 'name',
                 'name, id, questionid, type, tans, boxsize, strictsyntax, insertstars, ' .
-                'syntaxhint, forbidwords, allowwords, forbidfloat, requirelowestterms, ' .
+                'syntaxhint, syntaxattribute, forbidwords, allowwords, forbidfloat, requirelowestterms, ' .
                 'checkanswertype, mustverify, showvalidation, options');
 
         $question->prts = $DB->get_records('qtype_stack_prts',
@@ -390,21 +397,25 @@ class qtype_stack extends question_type {
         $question->options->set_option('sqrtsign',    (bool) $questiondata->options->sqrtsign);
         $question->options->set_option('simplify',    (bool) $questiondata->options->questionsimplify);
         $question->options->set_option('assumepos',   (bool) $questiondata->options->assumepositive);
+        $question->options->set_option('assumereal',  (bool) $questiondata->options->assumereal);
 
         $requiredparams = stack_input_factory::get_parameters_used();
-        foreach ($questiondata->inputs as $name => $inputdata) {
+        foreach (stack_utils::extract_placeholders($question->questiontext, 'input') as $name) {
+            $inputdata = $questiondata->inputs[$name];
             $allparameters = array(
-                'boxWidth'       => $inputdata->boxsize,
-                'strictSyntax'   => (bool) $inputdata->strictsyntax,
-                'insertStars'    => (int) $inputdata->insertstars,
-                'syntaxHint'     => $inputdata->syntaxhint,
-                'forbidWords'    => $inputdata->forbidwords,
-                'allowWords'     => $inputdata->allowwords,
-                'forbidFloats'   => (bool) $inputdata->forbidfloat,
-                'lowestTerms'    => (bool) $inputdata->requirelowestterms,
-                'sameType'       => (bool) $inputdata->checkanswertype,
-                'mustVerify'     => (bool) $inputdata->mustverify,
-                'showValidation' => $inputdata->showvalidation,
+                'boxWidth'        => $inputdata->boxsize,
+                'strictSyntax'    => (bool) $inputdata->strictsyntax,
+                'insertStars'     => (int) $inputdata->insertstars,
+                'syntaxHint'      => $inputdata->syntaxhint,
+                'syntaxAttribute' => $inputdata->syntaxattribute,
+                'forbidWords'     => $inputdata->forbidwords,
+                'allowWords'      => $inputdata->allowwords,
+                'forbidFloats'    => (bool) $inputdata->forbidfloat,
+                'lowestTerms'     => (bool) $inputdata->requirelowestterms,
+                'sameType'        => (bool) $inputdata->checkanswertype,
+                'mustVerify'      => (bool) $inputdata->mustverify,
+                'showValidation'  => $inputdata->showvalidation,
+                'options'         => $inputdata->options,
             );
             $parameters = array();
             foreach ($requiredparams[$inputdata->type] as $paramname) {
@@ -413,9 +424,8 @@ class qtype_stack extends question_type {
                 }
                 $parameters[$paramname] = $allparameters[$paramname];
             }
-            // TODO: Do something with $inputdata->options here.
             $question->inputs[$name] = stack_input_factory::make(
-                    $inputdata->type, $inputdata->name, $inputdata->tans, $parameters);
+                    $inputdata->type, $inputdata->name, $inputdata->tans, $question->options, $parameters);
         }
 
         $totalvalue = 0;
@@ -428,7 +438,9 @@ class qtype_stack extends question_type {
                     $question->name);
         }
 
-        foreach ($questiondata->prts as $name => $prtdata) {
+        $combinedtext = $question->questiontext . $question->specificfeedback;
+        foreach (stack_utils::extract_placeholders($combinedtext, 'feedback') as $name) {
+            $prtdata = $questiondata->prts[$name];
             $nodes = array();
             foreach ($prtdata->nodes as $nodedata) {
                 $sans = new stack_cas_casstring($nodedata->sans);
@@ -576,7 +588,11 @@ class qtype_stack extends question_type {
             $testcasedata = new stdClass();
             $testcasedata->questionid = $questionid;
             $testcasedata->testcase = $testcase;
+            $testcasedata->timemodified = time();
             $DB->insert_record('qtype_stack_qtests', $testcasedata);
+        } else {
+            $DB->set_field('qtype_stack_qtests', 'timemodified', time(),
+                    array('questionid' => $questionid, 'testcase' => $testcase));
         }
 
         // Save the input data.
@@ -605,7 +621,8 @@ class qtype_stack extends question_type {
             if ($expectedresults->penalty === '' || $expectedresults->penalty === null) {
                 $expected->expectedpenalty = null;
             } else {
-                $expected->expectedpenalty = (float) $expectedresults->penalty;
+                $expected->expectedpenalty = stack_utils::fix_approximate_thirds(
+                        (float) $expectedresults->penalty);
             }
             $expected->expectedanswernote = $expectedresults->answernotes[0];
             $DB->insert_record('qtype_stack_qtest_expected', $expected);
@@ -669,12 +686,12 @@ class qtype_stack extends question_type {
         $DB->set_field('qtype_stack_inputs', 'name', $to,
                 array('questionid' => $questionid, 'name' => $from));
 
-        // Where the input name appears in expressions in PRTs.
         $regex = '~\b' . preg_quote($from, '~') . '\b~';
+        // Where the input name appears in expressions in PRTs.
         $prts = $DB->get_records('qtype_stack_prts', array('questionid' => $questionid),
                     'id, feedbackvariables');
         foreach ($prts as $prt) {
-            $prt->sans = preg_replace($regex, $to, $prt->feedbackvariables, -1, $changes);
+            $prt->feedbackvariables = preg_replace($regex, $to, $prt->feedbackvariables, -1, $changes);
             if ($changes) {
                 $DB->update_record('qtype_stack_prts', $prt);
             }
@@ -806,7 +823,10 @@ class qtype_stack extends question_type {
                 array('questionid' => $questionid), 'testcase', 'testcase, 1');
         $testcases = array();
         foreach ($testcasenumbers as $number => $notused) {
-            $testcase = new stack_question_test($testinputs[$number]);
+            if (!array_key_exists($number, $testinputs)) {
+                $testinputs[$number] = array();
+            }
+            $testcase = new stack_question_test($testinputs[$number], $number);
             $testcases[$number] = $testcase;
         }
 
@@ -839,7 +859,7 @@ class qtype_stack extends question_type {
         $inputs = $DB->get_records_menu('qtype_stack_qtest_inputs',
                 array('questionid' => $questionid, 'testcase' => $testcase),
                 'inputname', 'inputname, value');
-        $qtest = new stack_question_test($inputs);
+        $qtest = new stack_question_test($inputs, $testcase);
 
         // Load the expectations.
         $expectations = $DB->get_records('qtype_stack_qtest_expected',
@@ -864,6 +884,7 @@ class qtype_stack extends question_type {
         $DB->delete_records('qtype_stack_qtest_expected', array('questionid' => $questionid));
         $DB->delete_records('qtype_stack_qtest_inputs',   array('questionid' => $questionid));
         $DB->delete_records('qtype_stack_qtests',         array('questionid' => $questionid));
+        $DB->delete_records('qtype_stack_qtest_results',  array('questionid' => $questionid));
         $transaction->allow_commit();
     }
 
@@ -880,6 +901,8 @@ class qtype_stack extends question_type {
         $DB->delete_records('qtype_stack_qtest_inputs',
                 array('questionid' => $questionid, 'testcase' => $testcase));
         $DB->delete_records('qtype_stack_qtests',
+                array('questionid' => $questionid, 'testcase' => $testcase));
+        $DB->delete_records('qtype_stack_qtest_results',
                 array('questionid' => $questionid, 'testcase' => $testcase));
         $transaction->allow_commit();
     }
@@ -953,6 +976,7 @@ class qtype_stack extends question_type {
         $output .= "    </questionnote>\n";
         $output .= "    <questionsimplify>{$options->questionsimplify}</questionsimplify>\n";
         $output .= "    <assumepositive>{$options->assumepositive}</assumepositive>\n";
+        $output .= "    <assumereal>{$options->assumereal}</assumereal>\n";
         $output .= $this->export_xml_text($format, 'prtcorrect', $options->prtcorrect,
                         $options->prtcorrectformat, $contextid, 'prtcorrect', $questiondata->id);
         $output .= $this->export_xml_text($format, 'prtpartiallycorrect', $options->prtpartiallycorrect,
@@ -975,6 +999,7 @@ class qtype_stack extends question_type {
             $output .= "      <strictsyntax>{$input->strictsyntax}</strictsyntax>\n";
             $output .= "      <insertstars>{$input->insertstars}</insertstars>\n";
             $output .= "      <syntaxhint>{$format->xml_escape($input->syntaxhint)}</syntaxhint>\n";
+            $output .= "      <syntaxattribute>{$format->xml_escape($input->syntaxattribute)}</syntaxattribute>\n";
             $output .= "      <forbidwords>{$format->xml_escape($input->forbidwords)}</forbidwords>\n";
             $output .= "      <allowwords>{$format->xml_escape($input->allowwords)}</allowwords>\n";
             $output .= "      <forbidfloat>{$input->forbidfloat}</forbidfloat>\n";
@@ -1067,6 +1092,7 @@ class qtype_stack extends question_type {
         $fromform->questionnote          = $format->getpath($xml, array('#', 'questionnote', 0, '#', 'text', 0, '#'), '', true);
         $fromform->questionsimplify      = $format->getpath($xml, array('#', 'questionsimplify', 0, '#'), 1);
         $fromform->assumepositive        = $format->getpath($xml, array('#', 'assumepositive', 0, '#'), 0);
+        $fromform->assumereal            = $format->getpath($xml, array('#', 'assumereal', 0, '#'), 0);
         $fromform->prtcorrect            = $this->import_xml_text($xml, 'prtcorrect', $format, $fromform->questiontextformat);
         $fromform->prtpartiallycorrect   = $this->import_xml_text($xml, 'prtpartiallycorrect',
                                                                   $format, $fromform->questiontextformat);
@@ -1151,6 +1177,7 @@ class qtype_stack extends question_type {
         $fromform->{$name . 'strictsyntax'}       = $format->getpath($xml, array('#', 'strictsyntax', 0, '#'), 1);
         $fromform->{$name . 'insertstars'}        = $format->getpath($xml, array('#', 'insertstars', 0, '#'), 0);
         $fromform->{$name . 'syntaxhint'}         = $format->getpath($xml, array('#', 'syntaxhint', 0, '#'), '');
+        $fromform->{$name . 'syntaxattribute'}    = $format->getpath($xml, array('#', 'syntaxattribute', 0, '#'), 0);
         $fromform->{$name . 'forbidwords'}        = $format->getpath($xml, array('#', 'forbidwords', 0, '#'), '');
         $fromform->{$name . 'allowwords'}         = $format->getpath($xml, array('#', 'allowwords', 0, '#'), '');
         $fromform->{$name . 'forbidfloat'}        = $format->getpath($xml, array('#', 'forbidfloat', 0, '#'), 1);
@@ -1232,7 +1259,7 @@ class qtype_stack extends question_type {
             }
         }
 
-        $testcase = new stack_question_test($inputs);
+        $testcase = new stack_question_test($inputs, $number);
 
         if (isset($xml['#']['expected'])) {
             foreach ($xml['#']['expected'] as $expectedxml) {

@@ -1,5 +1,5 @@
 <?php
-// This file is part of Stack - http://stack.bham.ac.uk/
+// This file is part of Stack - http://stack.maths.ed.ac.uk/
 //
 // Stack is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,14 +14,16 @@
 // You should have received a copy of the GNU General Public License
 // along with Stack.  If not, see <http://www.gnu.org/licenses/>.
 
+defined('MOODLE_INTERNAL') || die();
+
 require_once(__DIR__ . '/../locallib.php');
-require_once(__DIR__ . '/test_base.php');
+require_once(__DIR__ . '/fixtures/test_base.php');
 require_once(__DIR__ . '/../stack/cas/cassession.class.php');
 require_once(__DIR__ . '/../stack/cas/keyval.class.php');
 
+// Unit tests for {@link stack_cas_keyval}.
 
 /**
- * Unit tests for {@link stack_cas_keyval}.
  * @group qtype_stack
  */
 class stack_cas_keyval_test extends qtype_stack_testcase {
@@ -155,13 +157,53 @@ class stack_cas_keyval_test extends qtype_stack_testcase {
     }
 
     public function test_keyval_session_keyval_3() {
-        // Inserting stars.
-        $kvin  = "a:2x; b:(x+1)(x-1); b:f(x);";
-        $kvins = "a:2*x; b:(x+1)*(x-1); b:f(x);";
+        // Inserting stars: strict syntax is *false* and we add in more stars.
+        $kvin  = "a:2x; b:(x+1)(x-1); b:f(x); c:x7;";
+        $kvins = "a:2*x; b:(x+1)*(x-1); b:f*(x); c:x*7;";
         $at1 = new stack_cas_keyval($kvin, null, 123, 's', false, 1);
         $session = $at1->get_session();
         $kvout = $session->get_keyval_representation();
 
         $this->assertEquals($kvins, $kvout);
+    }
+
+    public function test_keyval_session_keyval_4() {
+        // Inserting stars. Strict syntax is *true*.
+        $kvin  = "a:2x; b:(x+1)(x-1); b:f(x); c:x7;";
+        $kvins = "a:2*x; b:(x+1)*(x-1); b:f(x); c:x7;";
+        $at1 = new stack_cas_keyval($kvin, null, 123, 's', true, 1);
+        $session = $at1->get_session();
+        $kvout = $session->get_keyval_representation();
+
+        $this->assertEquals($kvins, $kvout);
+    }
+
+    public function test_basic_logic() {
+        $tests = "t1: is(1>0);
+                t2: t1 and true;
+                t3: true or true;
+                f4: false;
+                f5: not(t1) and false;
+                f6: not(true and true);
+                t7: not(false);
+                t8: not(f6);
+                t9: t8 and true;
+        ";
+
+        $kv = new stack_cas_keyval($tests);
+        $this->assertTrue($kv->get_valid());
+        $kv->instantiate();
+        foreach ($kv->get_session() as $cs) {
+            $expect = (strpos($cs->get_key(), 't') === 0) ? 'true' : 'false';
+            $this->assertEquals($expect, $cs->get_value());
+        }
+    }
+
+    public function test_keyval_input_capture() {
+        $s = 'a:x^2; ans1:a+1; ta:a^2';
+        $kv = new stack_cas_keyval($s, null, 123, 's', true, 0);
+        $this->assertFalse($kv->get_valid(array('ans1')));
+        $this->assertEquals('You may not use input names as variables.  '.
+            'You have tried to define <code>ans1</code>', $kv->get_errors());
     }
 }

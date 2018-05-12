@@ -1,5 +1,5 @@
 <?php
-// This file is part of Stack - http://stack.bham.ac.uk/
+// This file is part of Stack - http://stack.maths.ed.ac.uk/
 //
 // Stack is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -24,8 +24,18 @@
 require_once(__DIR__ . '/../../../config.php');
 require_once($CFG->libdir . '/filelib.php');
 
+$filename = clean_filename(get_file_argument());
+$filenamesplit = explode('.', $filename);
+$filetype = end($filenamesplit);
 
-$plot = $CFG->dataroot . '/stack/plots/' . clean_filename(get_file_argument());
+$permittedtypes = array('png' => true, 'svg' => true);
+if (!array_key_exists($filetype, $permittedtypes)) {
+    header('HTTP/1.0 404 Not Found');
+    header('Content-Type: text/plain;charset=UTF-8');
+    echo 'Filetype not supported';
+}
+
+$plot = $CFG->dataroot . '/stack/plots/' . $filename;
 
 if (!is_readable($plot)) {
     header('HTTP/1.0 404 Not Found');
@@ -44,7 +54,7 @@ if (isset($_SERVER['HTTP_IF_MODIFIED_SINCE']) &&
 header('Last-Modified: '.gmdate('D, d M Y H:i:s', $filedate).' GMT');
 
 // Type.
-header('Content-Type: ' . mimeinfo('type', 'x.png'));
+header('Content-Type: ' . mimeinfo('type', 'x.'.$filetype));
 header('Content-Length: ' . filesize($plot));
 
 // Unlock session during file serving.

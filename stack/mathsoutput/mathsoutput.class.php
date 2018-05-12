@@ -1,5 +1,5 @@
 <?php
-// This file is part of Stack - http://stack.bham.ac.uk/
+// This file is part of Stack - http://stack.maths.ed.ac.uk/
 //
 // Stack is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,12 +14,11 @@
 // You should have received a copy of the GNU General Public License
 // along with Stack.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Public API for other parts of STACK to call in order to process equations.
- */
+defined('MOODLE_INTERNAL') || die();
+
+// Public API for other parts of STACK to call in order to process equations.
 
 require_once(__DIR__ . '/mathsoutputbase.class.php');
-
 
 /**
  * Public API to the maths rendering system.
@@ -103,7 +102,6 @@ class stack_maths {
         }
         return self::get_output_instance(stack_utils::get_config()->mathsdisplay);
     }
-
 
     /**
      * @param string $type the output method name.

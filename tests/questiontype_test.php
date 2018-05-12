@@ -14,29 +14,21 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Unit tests for the STACK question type class.
- *
- * @package   qtype_stack
- * @copyright 2012 The Open University
- * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-
-
 defined('MOODLE_INTERNAL') || die();
 
 global $CFG;
-require_once(__DIR__ . '/test_base.php');
+require_once(__DIR__ . '/fixtures/test_base.php');
 require_once($CFG->dirroot . '/question/format/xml/format.php');
 require_once($CFG->dirroot . '/question/engine/tests/helpers.php');
 require_once(__DIR__ . '/../questiontype.php');
 
+// Unit tests for the STACK question type class.
+//
+// @package   qtype_stack.
+// @copyright 2012 The Open University.
+// @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later.
 
 /**
- * Unit tests for the STACK question type class.
- *
- * @copyright 2012 The Open University
- * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @group qtype_stack
  */
 class qtype_stack_test extends qtype_stack_walkthrough_test_base {
@@ -177,6 +169,7 @@ class qtype_stack_test extends qtype_stack_walkthrough_test_base {
     </questionnote>
     <questionsimplify>1</questionsimplify>
     <assumepositive>0</assumepositive>
+    <assumereal>0</assumereal>
     <prtcorrect format="html">
       <text><![CDATA[<p>Correct answer, well done.</p>]]></text>
     </prtcorrect>
@@ -200,6 +193,7 @@ class qtype_stack_test extends qtype_stack_walkthrough_test_base {
       <strictsyntax>1</strictsyntax>
       <insertstars>0</insertstars>
       <syntaxhint></syntaxhint>
+      <syntaxattribute>0</syntaxattribute>
       <forbidwords></forbidwords>
       <allowwords></allowwords>
       <forbidfloat>1</forbidfloat>
@@ -287,6 +281,7 @@ class qtype_stack_test extends qtype_stack_walkthrough_test_base {
     </questionnote>
     <questionsimplify>1</questionsimplify>
     <assumepositive>0</assumepositive>
+    <assumereal>0</assumereal>
     <prtcorrect format="html">
       <text><![CDATA[<p>Correct answer, well done.</p>]]></text>
     </prtcorrect>
@@ -310,6 +305,7 @@ class qtype_stack_test extends qtype_stack_walkthrough_test_base {
       <strictsyntax>1</strictsyntax>
       <insertstars>0</insertstars>
       <syntaxhint></syntaxhint>
+      <syntaxattribute>0</syntaxattribute>
       <forbidwords></forbidwords>
       <allowwords></allowwords>
       <forbidfloat>1</forbidfloat>
@@ -389,6 +385,7 @@ class qtype_stack_test extends qtype_stack_walkthrough_test_base {
         $expectedq->questionnote          = '';
         $expectedq->questionsimplify      = 1;
         $expectedq->assumepositive        = 0;
+        $expectedq->assumereal            = 0;
         $expectedq->prtcorrect            = array('text' => '<p>Correct answer, well done.</p>',
                                                     'format' => FORMAT_HTML, 'files' => array());;
         $expectedq->prtpartiallycorrect   = array('text' => '<p>Your answer is partially correct.</p>',
@@ -408,6 +405,7 @@ class qtype_stack_test extends qtype_stack_walkthrough_test_base {
         $expectedq->ans1strictsyntax       = 1;
         $expectedq->ans1insertstars        = 0;
         $expectedq->ans1syntaxhint         = '';
+        $expectedq->ans1syntaxattribute    = 0;
         $expectedq->ans1forbidwords        = '';
         $expectedq->ans1allowwords         = '';
         $expectedq->ans1forbidfloat        = 1;
@@ -440,13 +438,13 @@ class qtype_stack_test extends qtype_stack_walkthrough_test_base {
 
         $expectedq->deployedseeds = array('12345');
 
-        $qtest = new stack_question_test(array('ans1' => '2'));
+        $qtest = new stack_question_test(array('ans1' => '2'), 1);
         $qtest->add_expected_result('firsttree', new stack_potentialresponse_tree_state(
                         1, true, 1, 0, '', array('firsttree-1-T')));
         $expectedq->testcases[1] = $qtest;
 
-        $this->assert(new question_check_specified_fields_expectation($expectedq), $q);
         $this->assertEquals($expectedq->deployedseeds, $q->deployedseeds); // Redundant, but gives better fail messages.
         $this->assertEquals($expectedq->testcases, $q->testcases); // Redundant, but gives better fail messages.
+        $this->assert(new question_check_specified_fields_expectation($expectedq), $q);
     }
 }

@@ -1,5 +1,5 @@
 <?php
-// This file is part of Stack - http://stack.bham.ac.uk/
+// This file is part of Stack - http://stack.maths.ed.ac.uk/
 //
 // Stack is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -150,8 +150,8 @@ class qtype_stack_question extends question_graded_automatically_with_countback
 
     /**
      * The next three fields cache the results of some expensive computations.
-     * The chache is only vaid for a particular response, so we store the current
-     * response, so that we can clearn the cached information in the result changes.
+     * The chache is only valid for a particular response, so we store the current
+     * response, so that we can learn the cached information in the result changes.
      * See {@link validate_cache()}.
      * @var array
      */
@@ -175,16 +175,20 @@ class qtype_stack_question extends question_graded_automatically_with_countback
 
     /**
      * Make sure the cache is valid for the current response. If not, clear it.
+     * @param bool $acceptvalid if this is true, then we will grade things even
+     * if the corresponding inputs are only VALID, and not SCORE.
      */
     protected function validate_cache($response, $acceptvalid = null) {
+
         if (is_null($this->lastresponse)) {
-            // Nothing cached yet. No worries.
             $this->lastresponse = $response;
             $this->lastacceptvalid = $acceptvalid;
             return;
         }
 
-        if ($this->lastresponse == $response && (
+        // We really need the PHP === here, as "0.040" == "0.04", even as strings.
+        // See https://stackoverflow.com/questions/80646/ for details.
+        if ($this->lastresponse === $response && (
                 $this->lastacceptvalid === null || $acceptvalid === null || $this->lastacceptvalid === $acceptvalid)) {
             if ($this->lastacceptvalid === null) {
                 $this->lastacceptvalid = $acceptvalid;
@@ -201,7 +205,7 @@ class qtype_stack_question extends question_graded_automatically_with_countback
 
     /**
      * @return bool do any of the inputs in this question require the student
-     *      validat the input.
+     *      validate the input.
      */
     protected function any_inputs_require_validation() {
         foreach ($this->inputs as $name => $input) {
@@ -238,10 +242,11 @@ class qtype_stack_question extends question_graded_automatically_with_countback
 
     public function start_attempt(question_attempt_step $step, $variant) {
 
+        // @codingStandardsIgnoreStart
         // Work out the right seed to use.
         if (!is_null($this->seed)) {
-            // Nasty hack, but if seed has already been set, then use that. This is
-            // used by the questiontestrun.php script to allow non-deployed
+            // This empty if statement is a hack, but if seed has already been set, then use that.
+            // This is used by the questiontestrun.php script to allow non-deployed
             // variants to be browsed.
         } else if (!$this->has_random_variants()) {
             // Randomisation not used.
@@ -254,6 +259,7 @@ class qtype_stack_question extends question_graded_automatically_with_countback
             // This question uses completely free randomisation.
             $this->seed = $variant;
         }
+        // @codingStandardsIgnoreEnd
         $step->set_qt_var('_seed', $this->seed);
 
         $this->initialise_question_from_seed();
@@ -387,7 +393,7 @@ class qtype_stack_question extends question_graded_automatically_with_countback
         $inputs = stack_utils::extract_placeholders($this->questiontextinstantiated, 'input');
         foreach ($inputs as $name) {
             $input = $this->inputs[$name];
-            $feedback .= html_writer::tag('p', $input->get_teacher_answer_display($this->session->get_value_key($name),
+            $feedback .= html_writer::tag('p', $input->get_teacher_answer_display($this->session->get_value_key($name, true),
                     $this->session->get_display_key($name)));
         }
         return stack_ouput_castext($feedback);
@@ -416,6 +422,15 @@ class qtype_stack_question extends question_graded_automatically_with_countback
                 $bits[] = $name . ': ' . $input->contents_to_maxima($state->contents) . ' [' . $state->status . ']';
             }
         }
+        // Add in the answer note for this response.
+        foreach ($this->prts as $name => $prt) {
+            $state = $this->get_prt_result($name, $response, false);
+            $note = implode(' | ', $state->answernotes);
+            if (trim($note) == '') {
+                $note = '#';
+            }
+            $bits[] = $name . ": " . $note;
+        }
         return implode('; ', $bits);
     }
 
@@ -433,9 +448,8 @@ class qtype_stack_question extends question_graded_automatically_with_countback
         $teacheranswer = array();
         foreach ($this->inputs as $name => $input) {
             $teacheranswer = array_merge($teacheranswer,
-                    $input->maxima_to_response_array($this->session->get_value_key($name)));
+                    $input->get_correct_response($this->session->get_value_key($name, true)));
         }
-
         return $teacheranswer;
     }
 
@@ -459,12 +473,12 @@ class qtype_stack_question extends question_graded_automatically_with_countback
     /**
      * Get the results of validating one of the input elements.
      * @param string $name the name of one of the input elements.
-     * @param array $response the response.
+     * @param array $response the response, in Maxima format.
+     * @param bool $rawinput the response in raw form. Needs converting to Maxima format by the input.
      * @return stack_input_state the result of calling validate_student_response() on the input.
      */
-    public function get_input_state($name, $response) {
+    public function get_input_state($name, $response, $rawinput=false) {
         $this->validate_cache($response, null);
-
         if (array_key_exists($name, $this->inputstates)) {
             return $this->inputstates[$name];
         }
@@ -478,7 +492,7 @@ class qtype_stack_question extends question_graded_automatically_with_countback
         $teacheranswer = $this->session->get_value_key($name);
         if (array_key_exists($name, $this->inputs)) {
             $this->inputstates[$name] = $this->inputs[$name]->validate_student_response(
-                $response, $this->options, $teacheranswer, $forbiddenkeys);
+                $response, $this->options, $teacheranswer, $forbiddenkeys, $rawinput);
             return $this->inputstates[$name];
         }
         return '';
@@ -597,7 +611,6 @@ class qtype_stack_question extends question_graded_automatically_with_countback
         foreach ($this->prts as $index => $prt) {
 
             $results = $this->get_prt_result($index, $response, $finalsubmit);
-
             if ($results->valid === null) {
                 continue;
             }
@@ -713,7 +726,6 @@ class qtype_stack_question extends question_graded_automatically_with_countback
      */
     protected function get_prt_input($index, $response, $acceptvalid) {
         $prt = $this->prts[$index];
-
         $prtinput = array();
         foreach ($prt->get_required_variables(array_keys($this->inputs)) as $name) {
             $state = $this->get_input_state($name, $response);
@@ -801,7 +813,7 @@ class qtype_stack_question extends question_graded_automatically_with_countback
      * @return bool whether this question uses randomisation.
      */
     public function has_random_variants() {
-        return preg_match('~\brand~', $this->questionvariables);
+        return preg_match('~\brand~', $this->questionvariables) || preg_match('~\bmultiselqn~', $this->questionvariables);
     }
 
     public function get_num_variants() {

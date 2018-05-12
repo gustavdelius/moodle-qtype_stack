@@ -23,7 +23,8 @@ Maxima is a very weakly typed language.  However, in STACK we need the following
   4. lists, for example, \([1,2,3]\).   In Maxima ordered lists are entered using square brackets, for example as `p:[1,1,2,x^2]`.
     An element is accessed using the syntax `p[1]`.
   5. [matrices](Matrix.md).  The basic syntax for a matrix is `p:matrix([1,2],[3,4])`.  Each row is a list. Elements are accessed as `p[1,2]`, etc.
-  6. expressions.
+  6. logical expression.  This is a tree of other expressions connected by the logical `and` and `or`.  This is useful for expressing solutions to equations, such as `x=1 or x=2`.  Note, the support for these expressions is unique to STACK.
+  7. expressions.
 
 Expressions come last, since they are just counted as being _not_ the others! STACK defines [predicate functions](Predicate_functions.md) to test for each of these types.
 
@@ -38,16 +39,12 @@ STACK defines the following function alias names
     simplify := fullratsimp
     int := integrate
 
-The absolute value function in Maxima is entered as `abs()`.  STACK also permits you to enter using `|` symbols, e.g.
-
-   |x|
-
-This is an alias for `abs`.  Note that `abs(x)` will be displayed by STACK as \(|x|\).
+The absolute value function in Maxima is entered as `abs()`.  STACK also permits you to enter using `|` symbols, i.e.`|x|`.  This is an alias for `abs`.  Note that `abs(x)` will be displayed by STACK as \(|x|\).
 
 STACK also redefined a small number of functions
 
- # The plot command `plot2d` is not used in STACK questions.  Use `plot` instead.  This ensures your image files are available on the server.
- # The random number command `random` is not used in STACK questions.  Use the command `rand` instead.  This ensures pseudorandom numbers are generated and a student gets the same version each time they login.
+* The plot command `plot2d` is not used in STACK questions.  Use `plot` instead, which is documented [here](Plots.md).  This ensures your image files are available on the server.
+* The random number command `random` is not used in STACK questions.  Use the command `rand` instead, which is documented [here](Random.md).  This ensures pseudorandom numbers are generated and a student gets the same version each time they login.
 
 # Parts of Maxima expressions {#Parts_of_Maxima_expressions}
 
@@ -92,13 +89,12 @@ documentaion.  See also [Predicate functions](Predicate_functions.md).
 | `zip_with(f,a,b)`               | This function applies the binary function \(f\) to two lists \(a\) and \(b\) returning a list.  An example is given in adding matrices to [show working](Matrix.md#Showing_working).
 | `coeff_list(ex,v)`              | This function takes an expression ex and returns a list of coefficients of v
 | `coeff_list_nz(ex,v)`           | This function takes an expression ex and returns a list of nonzero coefficients of v
-| `exdowncase(ex)`                | This return `ex` where all variable nanes are replaced by lower case versions.
 | `divthru(ex)`                   | Takes an algebraic fraction, e.g. \((x^4-1)/(x+2)\) and divides through by the denominator, to leave a polynomial and a proper fraction. Useful in feedback, or steps of a calculation.
 | `stack_strip_percent(ex,var)`   | Removes any variable beginning with the `%` character from `ex` and replace them with variables from `var`.  Useful for use with solve, ode2 etc.  [Solve and ode2](Differential_equations.md#Solve_and_ode2).
 | `exdowncase(ex)`                | Takes the expression `ex` and substitutes all variables for their lower case version (cf `sdowncase(ex)` in Maxima).  This is very useful if you don't care if a student uses the wrong case, just apply this function to their answer before using an [answer test](../Authoring/Answer_tests.md).  Note, of course, that `exdowncase(X)-x=0.`
 | `stack_reset_vars`              | Resets constants, e.g. \(i\), as abstract symbols, see [Numbers](Numbers.md).
-| `safe_op(ex)`                   | Returns the operation of the expression as a string.  Atoms return an empty string (rather than throwing an error as does `op`). 
-| `comp_square(ex,v)`             | Returns a quadratic `ex` in the variable `v` in completed sequare form.
+| `safe_op(ex)`                   | Returns the operation of the expression as a string.  Atoms return an empty string (rather than throwing an error as does `op`).
+| `comp_square(ex,v)`             | Returns a quadratic `ex` in the variable `v` in completed square form.
 | `degree(ex,v)`                  | Returns the degree of the expanded form of `ex` in the variable `v`. See also Maxima's `hipow` command.
 | `unary_minus_sort(ex)`          | Tidies up the way unary minus is represented within expressions when `simp:false`.  See also [simplification](Simplification.md).
 | `texboldatoms(ex)`              | Displays all non-numeric atoms in bold.  Useful for vector questions.
@@ -137,7 +133,7 @@ example, interpolates. Another example is a stationary point of
 
     p : subst(a,x,diff(ans1,x));
 
-Here we have assumed a is some point given to the student, `ans1` is the and that \(p\) will be used in the response processing tree.
+Here we have assumed a is some point given to the student, `ans1` is the answer and that \(p\) will be used in the response processing tree.
 
 You can use Maxima's looping structures within Question
 variables, although the syntax requires this to be of the form
@@ -185,7 +181,7 @@ For example, a piecewise function can be defined by either of these two commands
 
 You can then plot this using
 
-    @plot(f(x),[x,-1,1])@
+    {@plot(f(x),[x,-1,1])@}
 
 # Maxima "gocha"s! #
 
@@ -201,5 +197,3 @@ You can then plot this using
 ## See also
 
 [Maxima reference topics](index.md#reference).
-
-

@@ -1,5 +1,5 @@
 <?php
-// This file is part of Stack - http://stack.bham.ac.uk/
+// This file is part of Stack - http://stack.maths.ed.ac.uk/
 //
 // Stack is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,26 +14,20 @@
 // You should have received a copy of the GNU General Public License
 // along with Stack.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Unit tests for stack_potentialresponse_tree.
- *
- * @copyright  2012 The University of Birmingham
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-
+defined('MOODLE_INTERNAL') || die();
 
 require_once(__DIR__ . '/../stack/potentialresponsetree.class.php');
 require_once(__DIR__ . '/../stack/cas/castext.class.php');
 require_once(__DIR__ . '/../stack/cas/keyval.class.php');
 require_once(__DIR__ . '/../locallib.php');
-require_once(__DIR__ . '/test_base.php');
+require_once(__DIR__ . '/fixtures/test_base.php');
 
+// Unit tests for stack_potentialresponse_tree.
+//
+// @copyright 2012 The University of Birmingham.
+// @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later.
 
 /**
- * Unit tests for stack_potentialresponse_tree.
- *
- * @copyright  2012 The University of Birmingham
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @group qtype_stack
  */
 class stack_potentialresponsetree_test extends qtype_stack_testcase {
@@ -150,7 +144,7 @@ class stack_potentialresponsetree_test extends qtype_stack_testcase {
         $tans = new stack_cas_casstring('ta');
         $tans->get_valid('t');
         $node = new stack_potentialresponse_node($sans, $tans, 'AlgEquiv', '', true);
-        $node->add_branch(0, '=', 0, '', -1, 'Test 1 false. Look: \[@(sa1)^2@ \neq @(sa2)^2@\]', FORMAT_HTML, '1-0-0');
+        $node->add_branch(0, '=', 0, '', -1, 'Test 1 false. Look: \[{@(sa1)^2@} \neq {@(sa2)^2@}\]', FORMAT_HTML, '1-0-0');
         $node->add_branch(1, '=', 1, '', 1, 'Test 1 true. ', FORMAT_HTML, '1-0-1');
         $potentialresponses[] = $node;
 

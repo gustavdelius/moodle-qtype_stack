@@ -1,5 +1,5 @@
 <?php
-// This file is part of Stack - http://stack.bham.ac.uk/
+// This file is part of Stack - http://stack.maths.ed.ac.uk/
 //
 // Stack is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,12 +14,12 @@
 // You should have received a copy of the GNU General Public License
 // along with Stack.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Node in a potential response tree.
- *
- * @copyright  2012 University of Birmingham
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
+defined('MOODLE_INTERNAL') || die();
+
+// Node in a potential response tree.
+//
+// @copyright  2012 University of Birmingham.
+// @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later.
 
 require_once(__DIR__ . '/answertest/controller.class.php');
 
@@ -52,9 +52,9 @@ class stack_potentialresponse_node {
     private $answertest;
 
     /*
-     * @var string Any options for the answer test
+     * @var string Options taken by the answer test.
      */
-    public $atoptions;
+    private $atoptions;
 
     /*
     * @var boolean Suppress any feedback from the answer test itself?
@@ -135,7 +135,8 @@ class stack_potentialresponse_node {
     public function do_test($nsans, $ntans, $ncasopts, $options,
             stack_potentialresponse_tree_state $results) {
 
-        if (false === $ncasopts) {
+        // If an option is required by the answer test, but not processed by the CAS then take the raw value.
+        if ($this->required_atoptions() && !$this->process_atoptions()) {
             $ncasopts = $this->atoptions;
         }
         $at = new stack_ans_test_controller($this->answertest, $nsans, $ntans, $options, $ncasopts);
@@ -152,6 +153,7 @@ class stack_potentialresponse_node {
 
         if ($at->get_at_answernote()) {
             $results->add_answernote($at->get_at_answernote());
+            $trace['atanswernote'] = $at->get_at_answernote();
         }
         if ($resultbranch['answernote']) {
             $results->add_answernote($resultbranch['answernote']);
@@ -174,8 +176,19 @@ class stack_potentialresponse_node {
             $results->_penalty = $resultbranch['penalty'];
         }
 
-        $results->_errors .= $at->get_at_errors();
+        if ($at->get_at_errors()) {
+            $results->_errors .= $at->get_at_errors();
+            // This builds a basic representation of the CAS command used.
+            $cascommand = '<pre>AT'.$this->answertest . '(' . $nsans . ', ' . $ntans;
+            if ($ncasopts != '') {
+                $cascommand .= ', ' . $ncasopts;
+            }
+            $cascommand .= ')</pre>';
+            $results->_debuginfo .= $cascommand;
+            $results->_debuginfo .= $at->get_debuginfo();
+        }
 
+        $results->add_trace($at->get_trace());
         return $resultbranch['nextnode'];
     }
 
@@ -189,7 +202,7 @@ class stack_potentialresponse_node {
      * @param stack_options $options
      * @return array with two elements, the updated $results and the index of the next node.
      */
-    public function traverse($results, $key, $cascontext, $options) {
+    public function traverse($results, $key, $cascontext, $answers, $options) {
 
         $errorfree = true;
         if ($cascontext->get_errors_key('PRSANS' . $key)) {
@@ -213,10 +226,23 @@ class stack_potentialresponse_node {
         if (!($errorfree)) {
             return -1;
         }
+        // At this point we need to subvert the CAS.  If the sans or tans is *exactly* the name of one of the
+        // inputs, then we should use the casstring (not the rawcasstring).  Running the value through the CAS strips
+        // off trailing zeros, making it effectively impossible to run the numerical sigfigs tests.
         $sans   = $cascontext->get_value_key('PRSANS' . $key);
         $tans   = $cascontext->get_value_key('PRTANS' . $key);
+        foreach ($answers as $cskey => $val) {
+            // Check whether the raw input to the node exactly matches one of the answer names.
+            $cs = $this->sans;
+            if (trim($cs->get_raw_casstring()) == trim($cskey)) {
+                $sans = $cascontext->get_casstring_key($cskey);
+            }
+            $cs = $this->tans;
+            if (trim($cs->get_raw_casstring()) == trim($cskey)) {
+                $tans = $cascontext->get_casstring_key($cskey);
+            }
+        }
         $atopts = $cascontext->get_value_key('PRATOPT' . $key);
-
         // If we can't find atopts then they were not processed by the CAS.
         // They might still be some in the potential response which do not
         // need to be processed.
@@ -230,11 +256,19 @@ class stack_potentialresponse_node {
     }
 
     /*
-     * Does this answer test actually require options?
+     * Does this answer test actually require options to be processed by the CAS?
      */
     public function process_atoptions() {
         $at = new stack_ans_test_controller($this->answertest, '', '', null, '');
         return $at->process_atoptions();
+    }
+
+    /*
+     * Does this answer test actually require options?
+     */
+    public function required_atoptions() {
+        $at = new stack_ans_test_controller($this->answertest, '', '', null, '');
+        return $at->required_atoptions();
     }
 
     protected function update_score($oldscore, $resultbranch) {
@@ -288,7 +322,7 @@ class stack_potentialresponse_node {
         $this->tans->set_key('PRTANS' . $key);
         $variables[] = $this->tans;
 
-        if ($this->process_atoptions()) {
+        if ($this->process_atoptions() && trim($this->atoptions) != '') {
             $atopts = new stack_cas_casstring($this->atoptions);
             $atopts->get_valid('t', false, 0);
             $atopts->set_key('PRATOPT' . $key);
@@ -320,5 +354,15 @@ class stack_potentialresponse_node {
         $summary->truescore      = $this->branches[true]['score'];
         $summary->truescoremode  = $this->branches[true]['scoremodification'];
         return $summary;
+    }
+
+    public function get_maxima_representation() {
+        $ncasoptions = null;
+        if ($this->required_atoptions()) {
+            $ncasoptions = $this->atoptions;
+        }
+        $at = new stack_ans_test_controller($this->answertest,
+            $this->sans->get_raw_casstring(), $this->tans->get_raw_casstring(), null, $ncasoptions);
+        return $at->get_trace(false);
     }
 }

@@ -22,20 +22,31 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+defined('MOODLE_INTERNAL') || die();
+
+require_once(__DIR__ . '/../stack/utils.class.php');
+require_once(__DIR__ . '/../stack/cas/installhelper.class.php');
+require_once(__DIR__ . '/../stack/cas/connectorhelper.class.php');
+
+
 function xmldb_qtype_stack_install() {
     global $CFG;
 
     // Define stackmaximaversion config parameter.
-    if (!preg_match('~\[ STACK-Maxima started, library version (\d{10}) \]~',
+    if (!preg_match('~stackmaximaversion:(\d{10})~',
             file_get_contents($CFG->dirroot . '/question/type/stack/stack/maxima/stackmaxima.mac'), $matches)) {
         throw new coding_exception('Maxima libraries version number not found in stackmaxima.mac.');
     }
     set_config('stackmaximaversion', $matches[1], 'qtype_stack');
 
     // Make an reasonable guess at the OS. (It defaults to 'unix' in settings.php.
+    $platform = 'unix';
     if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
         // See http://stackoverflow.com/questions/1482260/how-to-get-the-os-on-which-php-is-running
         // and http://stackoverflow.com/questions/738823/possible-values-for-php-os.
         set_config('platform', 'win', 'qtype_stack');
+        $platform = 'win';
     }
+
+    // TODO: Attempt to create an optimised image at install time.
 }

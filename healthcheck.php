@@ -1,5 +1,5 @@
 <?php
-// This file is part of Stack - http://stack.bham.ac.uk/
+// This file is part of Stack - http://stack.maths.ed.ac.uk/
 //
 // Stack is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -55,15 +55,28 @@ if (data_submitted() && optional_param('clearcache', false, PARAM_BOOL)) {
     redirect($PAGE->url);
 }
 
+// Create and store Maxima image if requested.
+if (data_submitted() && optional_param('createmaximaimage', false, PARAM_BOOL)) {
+    require_sesskey();
+    stack_cas_connection_db_cache::clear_cache($DB);
+    list($ok, $errmsg)  = stack_cas_configuration::create_auto_maxima_image();
+    if ($ok) {
+        redirect($PAGE->url, stack_string('healthautomaxopt_succeeded'), null, \core\output\notification::NOTIFY_SUCCESS);
+    } else {
+        redirect($PAGE->url, stack_string('healthautomaxopt_failed', array('errmsg' => $errmsg)), null,
+                \core\output\notification::NOTIFY_ERROR);
+    }
+}
+
 $config = stack_utils::get_config();
 
 // Start output.
 echo $OUTPUT->header();
 echo $OUTPUT->heading($title);
 
-// Summary
 // This array holds summary info, for a table at the end of the pager.
 $summary = array();
+$summary[] = array('', $config->platform );
 
 // LaTeX.
 echo $OUTPUT->heading(stack_string('healthchecklatex'), 3);
@@ -72,17 +85,13 @@ echo html_writer::tag('p', stack_string('healthcheckmathsdisplaymethod',
 echo html_writer::tag('p', stack_string('healthchecklatexintro'));
 
 echo html_writer::tag('dt', stack_string('texdisplaystyle'));
-echo html_writer::tag('dd', format_text(stack_string('healthchecksampledisplaytex')));
+echo html_writer::tag('dd', stack_string('healthchecksampledisplaytex'));
 
 echo html_writer::tag('dt', stack_string('texinlinestyle'));
-echo html_writer::tag('dd', format_text(stack_string('healthchecksampleinlinetex')));
+echo html_writer::tag('dd', stack_string('healthchecksampleinlinetex'));
 
 if ($config->mathsdisplay === 'mathjax') {
-    $settingsurl = new moodle_url('/admin/settings.php', array('section' => 'additionalhtml'));
-    echo html_writer::tag('p', stack_string('healthchecklatexmathjax',
-            $settingsurl->out()));
-    echo html_writer::tag('textarea', s(stack_maths_output_mathjax::get_mathjax_code()),
-            array('readonly' => 'readonly', 'wrap' => 'virtual', 'rows' => '12', 'cols' => '100'));
+    echo html_writer::tag('p', stack_string('healthchecklatexmathjax'));
 } else {
     $settingsurl = new moodle_url('/admin/filters.php');
     echo html_writer::tag('p', stack_string('healthcheckfilters',
@@ -93,9 +102,11 @@ if ($config->mathsdisplay === 'mathjax') {
 echo $OUTPUT->heading(stack_string('healthcheckconfig'), 3);
 
 // Try to list available versions of Maxima (linux only, without the DB).
-$connection = stack_connection_helper::make();
-if (is_a($connection, 'stack_cas_connection_unix')) {
-    echo html_writer::tag('pre', $connection-> get_maxima_available());
+if ($config->platform !== 'win') {
+    $connection = stack_connection_helper::make();
+    if (is_a($connection, 'stack_cas_connection_unix')) {
+        echo html_writer::tag('pre', $connection->get_maxima_available());
+    }
 }
 
 // Check for location of Maxima.
@@ -104,6 +115,13 @@ if ('' != $maximalocation) {
     $message = stack_string('healthcheckconfigintro1').' '.html_writer::tag('tt', $maximalocation);
     echo html_writer::tag('p', $message);
     $summary[] = array(null, $message);
+}
+
+// Check if the current options for library packages are permitted (maximalibraries).
+list($valid, $message) = stack_cas_configuration::validate_maximalibraries();
+if (!$valid) {
+    echo html_writer::tag('p', $message);
+    $summary[] = array(false, $message);
 }
 
 // Try to connect to create maxima local.
@@ -141,7 +159,7 @@ output_cas_text(stack_string('healthcheckconnect'),
 if ($config->platform === 'unix' and $genuinecascall) {
     echo $OUTPUT->heading(stack_string('healthautomaxopt'), 3);
     echo html_writer::tag('p', stack_string('healthautomaxoptintro'));
-    list($message, $debug, $result) = stack_connection_helper::stackmaxima_auto_maxima_optimise($genuinedebug);
+    list($message, $debug, $result, $commandline) = stack_connection_helper::stackmaxima_auto_maxima_optimise($genuinedebug);
     $summary[] = array($result, $message);
     echo html_writer::tag('p', $message);
     echo output_debug(stack_string('debuginfo'), $debug);
@@ -175,6 +193,14 @@ if ('db' == $config->casresultscache) {
             stack_string('clearthecache'));
 }
 
+// Option to auto-create the Maxima image and store the results.
+if ($config->platform != 'win') {
+    echo $OUTPUT->single_button(
+        new moodle_url($PAGE->url, array('createmaximaimage' => 1, 'sesskey' => sesskey())),
+        stack_string('healthcheckcreateimage'));
+}
+
+
 echo '<hr />';
 $tab = '';
 foreach ($summary as $line) {
@@ -203,7 +229,7 @@ function output_cas_text($title, $intro, $castext) {
 
     $ct = new stack_cas_text($castext, null, 0, 't');
 
-    echo html_writer::tag('p', format_text(stack_ouput_castext($ct->get_display_castext())));
+    echo html_writer::tag('p', stack_ouput_castext($ct->get_display_castext()));
     echo output_debug(stack_string('errors'), $ct->get_errors());
     echo output_debug(stack_string('debuginfo'), $ct->get_debuginfo());
 }

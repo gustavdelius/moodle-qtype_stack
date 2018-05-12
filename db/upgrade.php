@@ -24,6 +24,10 @@
 
 defined('MOODLE_INTERNAL') || die();
 
+require_once(__DIR__ . '/../stack/cas/connectorhelper.class.php');
+require_once(__DIR__ . '/../stack/cas/connector.dbcache.class.php');
+require_once(__DIR__ . '/../stack/cas/installhelper.class.php');
+
 /**
  * Upgrade code for the Stack question type.
  * @param int $oldversion the version we are upgrading from.
@@ -418,11 +422,11 @@ function xmldb_qtype_stack_upgrade($oldversion) {
     }
 
     if ($oldversion < 2012061500) {
-        // Define field questionnote to be dropped from qtype_stack.
+        // Define field markmode to be dropped from qtype_stack.
         $table = new xmldb_table('qtype_stack');
         $field = new xmldb_field('markmode');
 
-        // Conditionally launch drop field questionnote.
+        // Conditionally launch drop field markmode.
         if ($dbman->field_exists($table, $field)) {
             $dbman->drop_field($table, $field);
         }
@@ -645,15 +649,151 @@ function xmldb_qtype_stack_upgrade($oldversion) {
         upgrade_plugin_savepoint(true, 2014040501, 'qtype', 'stack');
     }
 
+    if ($oldversion < 2016012900) {
+
+        // Convert approximate thirds for penalties in the question table.
+        $DB->set_field_select('question', 'penalty', '0.3333333',
+                'qtype = ? AND penalty BETWEEN ? AND ?', array('stack', '0.33', '0.34'));
+        $DB->set_field_select('question', 'penalty', '0.6666667',
+                'qtype = ? AND penalty BETWEEN ? AND ?', array('stack', '0.66', '0.67'));
+
+        // Qtype stack savepoint reached.
+        upgrade_plugin_savepoint(true, 2016012900, 'qtype', 'stack');
+    }
+
+    if ($oldversion < 2016012901) {
+
+        // Convert approximate thirds for penalties in the qtype_stack_prt_nodes table.
+        $DB->set_field_select('qtype_stack_prt_nodes', 'truepenalty', '0.3333333',
+                'truepenalty BETWEEN ? AND ?', array('0.33', '0.34'));
+        $DB->set_field_select('qtype_stack_prt_nodes', 'truepenalty', '0.6666667',
+                'truepenalty BETWEEN ? AND ?', array('0.66', '0.67'));
+        $DB->set_field_select('qtype_stack_prt_nodes', 'falsepenalty', '0.3333333',
+                'falsepenalty BETWEEN ? AND ?', array('0.33', '0.34'));
+        $DB->set_field_select('qtype_stack_prt_nodes', 'falsepenalty', '0.6666667',
+                'falsepenalty BETWEEN ? AND ?', array('0.66', '0.67'));
+
+        // Qtype stack savepoint reached.
+        upgrade_plugin_savepoint(true, 2016012901, 'qtype', 'stack');
+    }
+
+    if ($oldversion < 2016012902) {
+
+        // Convert approximate thirds for penalties in the qtype_stack_qtest_expected table.
+        $DB->set_field_select('qtype_stack_qtest_expected', 'expectedpenalty', '0.3333333',
+                'expectedpenalty BETWEEN ? AND ?', array('0.33', '0.34'));
+        $DB->set_field_select('qtype_stack_qtest_expected', 'expectedpenalty', '0.6666667',
+                'expectedpenalty BETWEEN ? AND ?', array('0.66', '0.67'));
+
+        upgrade_plugin_savepoint(true, 2016012902, 'qtype', 'stack');
+    }
+
+    if ($oldversion < 2016082000) {
+
+        // Define table qtype_stack_inputs to be created.
+        $table = new xmldb_table('qtype_stack_inputs');
+
+        $field = new xmldb_field('syntaxattribute', XMLDB_TYPE_INTEGER, '4', null, XMLDB_NOTNULL, null, '0', 'syntaxhint');
+
+        // Conditionally launch add field syntaxattribute.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        upgrade_plugin_savepoint(true, 2016082000, 'qtype', 'stack');
+    }
+
+    if ($oldversion < 2017082300) {
+
+        // Define field assumepositive to be added to qtype_stack_options.
+        $table = new xmldb_table('qtype_stack_options');
+        $field = new xmldb_field('assumereal', XMLDB_TYPE_INTEGER, '4', null, XMLDB_NOTNULL, null, '0', 'assumepositive');
+
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        upgrade_plugin_savepoint(true, 2017082300, 'qtype', 'stack');
+    }
+
+    if ($oldversion < 2017082400) {
+        // Changing type of field questionnote on table qtype_stack_options to text.
+        $table = new xmldb_table('qtype_stack_options');
+        $field = new xmldb_field('questionnote', XMLDB_TYPE_TEXT, 'medium', null, XMLDB_NOTNULL, null, null);
+
+        // Launch change of type for field questionnote.
+        $dbman->change_field_type($table, $field);
+        $dbman->change_field_default($table, $field);
+
+        // STACK savepoint reached.
+        upgrade_plugin_savepoint(true, 2017082400, 'qtype', 'stack');
+    }
+
+    if ($oldversion < 2018021900) {
+
+        // Define field timemodified to be added to qtype_stack_qtests.
+        $table = new xmldb_table('qtype_stack_qtests');
+        $field = new xmldb_field('timemodified', XMLDB_TYPE_INTEGER, '10', null, null, null, null, 'testcase');
+
+        // Conditionally launch add field timemodified.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Stack savepoint reached.
+        upgrade_plugin_savepoint(true, 2018021900, 'qtype', 'stack');
+    }
+
+    if ($oldversion < 2018021901) {
+
+        // Define table qtype_stack_qtest_results to be created.
+        $table = new xmldb_table('qtype_stack_qtest_results');
+
+        // Adding fields to table qtype_stack_qtest_results.
+        $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
+        $table->add_field('questionid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
+        $table->add_field('testcase', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
+        $table->add_field('seed', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
+        $table->add_field('result', XMLDB_TYPE_INTEGER, '4', null, XMLDB_NOTNULL, null, null);
+        $table->add_field('timerun', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
+
+        // Adding keys to table qtype_stack_qtest_results.
+        $table->add_key('primary', XMLDB_KEY_PRIMARY, array('id'));
+        $table->add_key('questionid-testcase', XMLDB_KEY_FOREIGN, array('questionid', 'testcase'), 'qtype_stack_qtests', array('questionid', 'testcase'));
+
+        // Adding indexes to table qtype_stack_qtest_results.
+        $table->add_index('questionid-testcase-seed', XMLDB_INDEX_UNIQUE, array('questionid', 'testcase', 'seed'));
+
+        // Conditionally launch create table for qtype_stack_qtest_results.
+        if (!$dbman->table_exists($table)) {
+            $dbman->create_table($table);
+        }
+
+        // Stack savepoint reached.
+        upgrade_plugin_savepoint(true, 2018021901, 'qtype', 'stack');
+    }
+
     // Add new upgrade blocks just above here.
+
+    // Check the version of the Maxima library code that comes with this version
+    // of STACK. Compare that to the version that was previously in use. If they
+    // are different, automatically clear the CAS cache.
 
     // This block of code is intentionally outside of an if statement. We want
     // this bit of code to run every time that qtype_stack is updated.
-    if (!preg_match('~\[ STACK-Maxima started, library version (\d{10}) \]~',
+    if (!preg_match('~stackmaximaversion:(\d{10})~',
             file_get_contents($CFG->dirroot . '/question/type/stack/stack/maxima/stackmaxima.mac'), $matches)) {
-        throw new coding_exception('Maxima libraries version number not found in stackmaxima.mac.');
+                throw new coding_exception('Maxima libraries version number not found in stackmaxima.mac.');
     }
-    set_config('stackmaximaversion', $matches[1], 'qtype_stack');
+    $latestversion = $matches[1];
+    $currentlyusedversion = get_config('qtype_stack', 'stackmaximaversion');
+
+    if ($latestversion != $currentlyusedversion) {
+        stack_cas_connection_db_cache::clear_cache($DB);
+    }
+
+    // Update the record of the currently used version.
+    set_config('stackmaximaversion', $latestversion, 'qtype_stack');
 
     return true;
 }

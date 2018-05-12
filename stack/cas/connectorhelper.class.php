@@ -1,5 +1,5 @@
 <?php
-// This file is part of Stack - http://stack.bham.ac.uk/
+// This file is part of Stack - http://stack.maths.ed.ac.uk/
 //
 // Stack is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,10 +14,12 @@
 // You should have received a copy of the GNU General Public License
 // along with Stack.  If not, see <http://www.gnu.org/licenses/>.
 
+defined('MOODLE_INTERNAL') || die();
 
 require_once(__DIR__ . '/connector.interface.php');
 require_once(__DIR__ . '/connector.class.php');
 require_once(__DIR__ . '/connector.dbcache.class.php');
+require_once(__DIR__ . '/installhelper.class.php');
 
 
 /**
@@ -300,6 +302,8 @@ abstract class stack_connection_helper {
                 'cte("CASresult",errcatch(diff(x^n,x))), print("1=[ error= ["), ' .
                 'cte("STACKversion",errcatch(stackmaximaversion)), print("2=[ error= ["), ' .
                 'cte("MAXIMAversion",errcatch(MAXIMA_VERSION_STR)), print("3=[ error= ["), ' .
+                'cte("MAXIMAversionnum",errcatch(MAXIMA_VERSION_NUM)), print("4=[ error= ["), ' .
+                'cte("externalformat",errcatch(adjust_external_format())), print("5=[ error= ["), ' .
                 'cte("CAStime",errcatch(CAStime:"'.$date.'")), print("] ]"), return(true));' .
                 "\n";
 
@@ -312,10 +316,17 @@ abstract class stack_connection_helper {
             $message[] = stack_string('stackCas_allFailed');
             $success = false;
         } else {
+            $maximaversionum = 'unknown number';
+            foreach ($results as $result) {
+                if ('MAXIMAversionnum' === $result['key']) {
+                    $maximaversionum = $result['value'];
+                }
+            }
             foreach ($results as $result) {
                 if ('CASresult' === $result['key']) {
                     if ($result['value'] != 'n*x^(n-1)') {
-                        $message[] = stack_string('healthuncachedstack_CAS_calculation', array('expected' => "n*x^(n-1)", 'actual' => $result['value']));
+                        $message[] = stack_string('healthuncachedstack_CAS_calculation',
+                                array('expected' => "n*x^(n-1)", 'actual' => $result['value']));
                         $success = false;
                     }
                 } else if ('CAStime' === $result['key']) {
@@ -323,16 +334,22 @@ abstract class stack_connection_helper {
                         $success = false;
                     }
                 } else if ('MAXIMAversion' === $result['key']) {
+                    $maximaversionstr = $result['value'] . ' ('.$maximaversionum.')';
                     if ('default' == $maximaversion) {
-                        $message[] = stack_string('healthuncachedstack_CAS_versionnotchecked', array('actual' => $result['value']));
+                        $message[] = stack_string('healthuncachedstack_CAS_versionnotchecked',
+                                array('actual' => $maximaversionstr));
                     } else if ($result['value'] != '"'.$maximaversion.'"') {
-                        $message[] = stack_string('healthuncachedstack_CAS_version', array('expected' => $maximaversion, 'actual' => $result['value']));
+                        $message[] = stack_string('healthuncachedstack_CAS_version',
+                                array('expected' => $maximaversion, 'actual' => $maximaversionstr));
                         $success = false;
                     }
-                } else if ('STACKversion' !== $result['key']) {
-                    $success = false;
                 }
             }
+        }
+
+        if (strstr($debug, 'failed to load')) {
+            $message[] = stack_string('settingmaximalibraries_failed');
+            $success = false;
         }
 
         if ($success) {
@@ -388,7 +405,7 @@ abstract class stack_connection_helper {
                 if (trim($lisprun) == '') {
                     $success = false;
                     $message = stack_string('healthautomaxopt_nolisprun');
-                    return array($message, '', $success);
+                    return array($message, '', $success, '');
                 }
                 $lisprun = explode("\n", $lisprun);
                 $commandline = $lisprun[0].' -q -M '.stack_utils::convert_slash_paths($imagename);
@@ -397,7 +414,7 @@ abstract class stack_connection_helper {
             default:
                 $success = false;
                 $message = stack_string('healthautomaxopt_nolisp');
-                return array($message, '', $success);
+                return array($message, '', $success, '');
         }
 
         // Really make sure there is no cache.
@@ -405,6 +422,7 @@ abstract class stack_connection_helper {
 
         // Question: should we at this stage try to use the optimised image we have created?
         $success = true;
+
         // Add the timeout command to the message.
         $commandline = 'timeout --kill-after=10s 10s '.$commandline;
         $message = stack_string('healthautomaxopt_ok', array('command' => $commandline));
@@ -413,6 +431,7 @@ abstract class stack_connection_helper {
             $message = stack_string('healthautomaxopt_notok');
         }
 
-        return array($message, $debug, $success);
+        return array($message, $debug, $success, $commandline);
     }
+
 }

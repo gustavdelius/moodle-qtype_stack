@@ -1,5 +1,5 @@
 <?php
-// This file is part of Stack - http://stack.bham.ac.uk/
+// This file is part of Stack - http://stack.maths.ed.ac.uk/
 //
 // Stack is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,9 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with Stack.  If not, see <http://www.gnu.org/licenses/>.
 
+defined('MOODLE_INTERNAL') || die();
 
 require_once(__DIR__ . '/fact_sheets.class.php');
-
 
 /**
  * The base class for STACK maths output methods.
@@ -106,14 +106,41 @@ abstract class stack_maths_output {
             $displayend   = '<ins>\]</ins>';
             $inlinestart  = '<ins>\(</ins>';
             $inlineend    = '<ins>\)</ins>';
+            $v4start      = '<ins>{@</ins>';
+            $v4end        = '<ins>@}</ins>';
         } else {
             $displaystart = '\[';
             $displayend   = '\]';
             $inlinestart  = '\(';
             $inlineend    = '\)';
+            $v4start      = '{@';
+            $v4end        = '@}';
         }
         $text = preg_replace('~(?<!\\\\)\$\$(.*?)(?<!\\\\)\$\$~', $displaystart . '$1' . $displayend, $text);
         $text = preg_replace('~(?<!\\\\)\$(.*?)(?<!\\\\)\$~', $inlinestart . '$1' . $inlineend, $text);
+
+        $temp = stack_utils::all_substring_between($text, '@', '@', true);
+        $i = 0;
+        foreach ($temp as $cmd) {
+            $pos = strpos($text, '@', $i);
+            $post = false;
+            while (!$post) {
+                $post = strpos($text, '@', $pos + 1);
+                if (strpos($text, $cmd, $pos) > $post || trim(substr($text, $pos + 1, $post - $pos - 1)) != $cmd) {
+                    $pos = $post;
+                    $post = false;
+                } else {
+                    $post = $post + 1;
+                }
+            }
+            $front = $pos > 0 && $text[$pos - 1] == '{';
+            $back = $post < strlen($text) && $text[$post] == '}';
+            if (!($front && $back)) {
+                $text = substr($text, 0, $pos) . $v4start . trim($cmd) . $v4end . substr($text, $post);
+            }
+            $i = $pos + strlen($v4start);
+        }
+
         return $text;
     }
 }

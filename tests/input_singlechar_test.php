@@ -1,5 +1,5 @@
 <?php
-// This file is part of Stack - http://stack.bham.ac.uk/
+// This file is part of Stack - http://stack.maths.ed.ac.uk/
 //
 // Stack is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,21 +14,16 @@
 // You should have received a copy of the GNU General Public License
 // along with Stack.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Unit tests for the stack_singlechar_input class.
- *
- * @copyright  2012 The Open University
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
+defined('MOODLE_INTERNAL') || die();
 
 require_once(__DIR__ . '/../stack/input/factory.class.php');
 
+// Unit tests for stack_singlechar_input.
+//
+// @copyright 2012 The Open University.
+// @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later.
 
 /**
- * Unit tests for stack_singlechar_input.
- *
- * @copyright  2012 The Open University
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @group qtype_stack
  */
 class stack_singlechar_input_test extends basic_testcase {
@@ -37,14 +32,14 @@ class stack_singlechar_input_test extends basic_testcase {
         $el = stack_input_factory::make('singleChar', 'ans1', null);
         $this->assertEquals('<input type="text" name="question__ans1" id="question__ans1" size="1" maxlength="1" value="" />',
                 $el->render(new stack_input_state(stack_input::BLANK, array(), '', '', '', '', '', ''),
-                        'question__ans1', false));
+                        'question__ans1', false, null));
     }
 
     public function test_render_pre_filled() {
         $el = stack_input_factory::make('singleChar', 'test', null);
         $this->assertEquals('<input type="text" name="question__ans1" id="question__ans1" size="1" maxlength="1" value="Y" />',
                 $el->render(new stack_input_state(stack_input::VALID, array('Y'), '', '', '', '', ''),
-                        'question__ans1', false));
+                        'question__ans1', false, null));
     }
 
     public function test_render_disabled() {
@@ -53,6 +48,6 @@ class stack_singlechar_input_test extends basic_testcase {
             'value="a" readonly="readonly" />';
         $this->assertEquals($expected,
                 $el->render(new stack_input_state(stack_input::VALID, array('a'), '', '', '', '', ''),
-                        'question__stack1', true));
+                        'question__stack1', true, null));
     }
 }

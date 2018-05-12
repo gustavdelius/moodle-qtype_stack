@@ -17,7 +17,6 @@ It might also forgive some errors you make.
 
 ## Basic Notation  ##
 
-
 ### Numbers  ###
 
 You should type in numbers without spaces, and use fractions rather than decimals where possible.
@@ -52,6 +51,7 @@ Negative or fractional powers need brackets:
 
 * \(x^{-2}\) should be entered as `x^(-2)`.
 * \(x^{1/3}\) should be entered as `x^(1/3)`.
+* The function `root(x,n)` can be used for `x^(1/n)`.  If you omit the second argument you get `root(x)=sqrt(x)`.
 
 ### Brackets  ###
 
@@ -89,6 +89,14 @@ Note that in this context you should always use ordinary round bracket (like (a+
 * `{a+b}` means a set,
 * `[a+b]` means a list.
 
+### Scientific units  ###
+
+You may be asked to answer a question in which the answer has units.  E.g. \( 9.81\mbox{m}\mbox{s}^{-2} \).  To enter units you must use multiplication, so this is entered as either `9.81*m/s^2` or `9.81*m*s^(-2)`.  Don't use a space, or another symbol such as `+`.
+
+### Subscripts  ###
+
+Use the underscore character to denote a subscript.  For example, \(a_b\) should be entered as `a_b`.
+
 ### More examples  ###
 
 * \(2^{a+b}\) should be entered as `2^(a+b)`
@@ -120,9 +128,10 @@ Things to remember:
 
 ### **Exponentials** and **Logarithms** ###
 
-* You should always write `exp(x)`. Typing `e^x` should work in STACK, but gets you into bad habits when using a CAS later!
-* Currently in STACK both \(\ln\) and \(\log\) are the _natural logarithms_ with base \(e\approx 2.71\cdots\). Note that both of these start with a lower case l, not a capital I. 
-* Log to base \(10\) is entered as `lg`.
+* To enter the exponential function type `exp(x)`. Typing `e^x` should work in STACK, but gets you into bad habits when using a CAS later!
+* Type `ln(x)` or `log(x)` to enter the _natural logarithm_ of \(x\) with base \(e\approx 2.71\cdots\). Note that both of these start with a lower case l for logarithm, not a capital I (`i`).
+* Log \(x\) to base \(10\) is entered as `lg(x)`.
+* The logarithm of \(x\) to base \(a\) is entered as `lg(x,a)`, sometimes written \(\log_{a}(x)\).
 
 ## Matrices  ##
 
@@ -140,7 +149,6 @@ The function matrix is used to indicate this is a matrix and not a "list of list
 
 ### Equations and Inequalities ###
 
-
 Equations can be entered using the equals sign. For example, to enter the equation \(y=x^2-2x+1\) type `y=x^2-2*x+1`.
 
 Inequalities can be entered using the greater than and less than signs on the keyboard.
@@ -149,6 +157,9 @@ Note there is no space between these symbols, and the equality must come second 
 
 Sometimes you will need to connect inqualities together as `x>1 and x<=5`.  You must use the logical connectives `and` and `or`.  "Chained inequalities" such as \(1<x<5\) are not permitted as input syntax.  You should enter this as `1<x and x<5`.
 
+### Reasoning line by line ###
+
+Sometimes you will be asked to reason line by line.  This is called [reasoning by equivalence](Equivalence_reasoning.md).
 
 ## Other notes  ##
 

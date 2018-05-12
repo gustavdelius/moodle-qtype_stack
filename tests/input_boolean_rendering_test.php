@@ -1,5 +1,5 @@
 <?php
-// This file is part of Stack - http://stack.bham.ac.uk/
+// This file is part of Stack - http://stack.maths.ed.ac.uk/
 //
 // Stack is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,24 +14,18 @@
 // You should have received a copy of the GNU General Public License
 // along with Stack.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Unit tests for the stack_boolean_input class.
- *
- * @copyright  2012 The Open University
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-
+defined('MOODLE_INTERNAL') || die();
 
 global $CFG;
 require_once(__DIR__ . '/../stack/input/factory.class.php');
-require_once(__DIR__ . '/test_base.php');
+require_once(__DIR__ . '/fixtures/test_base.php');
 
+// Unit tests for stack_boolean_input_test.
+//
+// @copyright  2012 The Open University.
+// @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later.
 
 /**
- * Unit tests for stack_boolean_input_test.
- *
- * @copyright  2012 The Open University
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @group qtype_stack
  */
 class stack_boolean_input_rendering_test extends question_testcase {
@@ -50,7 +44,7 @@ class stack_boolean_input_rendering_test extends question_testcase {
                         'stack1__ans1', $this->expected_choices(), stack_boolean_input::NA),
                 $el->render(new stack_input_state(
                         stack_input::BLANK, array(stack_boolean_input::NA), '', '', '', '', '', ''),
-                        'stack1__ans1', false, ''));
+                        'stack1__ans1', false, null));
     }
 
     public function test_render_true() {
@@ -58,7 +52,7 @@ class stack_boolean_input_rendering_test extends question_testcase {
         $this->assert(new question_contains_select_expectation('stack1__ans2', $this->expected_choices(),
                 stack_boolean_input::T), $el->render(new stack_input_state(
                         stack_input::VALID, array(stack_boolean_input::T), '', '', '', '', '', ''),
-                        'stack1__ans2', false));
+                        'stack1__ans2', false, null));
     }
 
     public function test_render_false() {
@@ -66,7 +60,7 @@ class stack_boolean_input_rendering_test extends question_testcase {
         $this->assert(new question_contains_select_expectation('stack1__ans3', $this->expected_choices(),
                 stack_boolean_input::F), $el->render(new stack_input_state(
                         stack_input::VALID, array(stack_boolean_input::F), '', '', '', '', '', ''),
-                        'stack1__ans3', false));
+                        'stack1__ans3', false, null));
     }
 
     public function test_render_disabled() {
@@ -74,6 +68,6 @@ class stack_boolean_input_rendering_test extends question_testcase {
         $this->assert(new question_contains_select_expectation('stack1__ans1', $this->expected_choices(),
                 stack_boolean_input::NA, false), $el->render(new stack_input_state(
                         stack_input::BLANK, array(), '', '', '', '', ''),
-                        'stack1__ans1', true));
+                        'stack1__ans1', true, null));
     }
 }

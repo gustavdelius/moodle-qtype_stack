@@ -14,27 +14,17 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Unit tests for the OU multiple response question class.
- *
- * @package    qtype
- * @subpackage oumultiresponse
- * @copyright 2008 The Open University
- * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-
-
 defined('MOODLE_INTERNAL') || die();
 
 global $CFG;
-require_once(__DIR__ . '/test_base.php');
+require_once(__DIR__ . '/fixtures/test_base.php');
 
+// Unit tests for (some of) question/type/stack/questiontype.php.
+//
+// @copyright 2008 The Open University.
+// @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later.
 
 /**
- * Unit tests for (some of) question/type/oumultiresponse/questiontype.php.
- *
- * @copyright  2008 The Open University
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @group qtype_stack
  */
 class qtype_stack_question_test extends qtype_stack_testcase {
@@ -229,4 +219,5 @@ class qtype_stack_question_test extends qtype_stack_testcase {
         $expected = array('a' => '3', 'b' => '9', 'ta' => 'x+y', 'ans1' => '5', 'ans2' => '6');
         $this->assertEquals($expected, $q->get_question_var_values());
     }
+
 }

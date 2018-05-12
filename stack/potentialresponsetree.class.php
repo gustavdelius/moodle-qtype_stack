@@ -1,5 +1,5 @@
 <?php
-// This file is part of Stack - http://stack.bham.ac.uk/
+// This file is part of Stack - http://stack.maths.ed.ac.uk/
 //
 // Stack is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,22 +14,16 @@
 // You should have received a copy of the GNU General Public License
 // along with Stack.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Deals with whole potential response trees.
- *
- * @copyright  2012 University of Birmingham
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
+defined('MOODLE_INTERNAL') || die();
+
+// Deals with whole potential response trees.
+//
+// @copyright  2012 University of Birmingham.
+// @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later.
 
 require_once(__DIR__ . '/potentialresponsenode.class.php');
 require_once(__DIR__ . '/potentialresponsetreestate.class.php');
 
-/**
- * Deals with whole potential response trees.
- *
- * @copyright  2012 University of Birmingham
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
 class stack_potentialresponse_tree {
 
     /** @var string Name of the PRT. */
@@ -126,10 +120,14 @@ class stack_potentialresponse_tree {
         // Some irrelevant but invalid answers might break the CAS connection.
         foreach ($this->get_required_variables(array_keys($answers)) as $name) {
             if (array_key_exists($name . '_val', $answers)) {
-                $cs = new stack_cas_casstring($answers[$name . '_val']);
+                $ans = $answers[$name . '_val'];
             } else {
-                $cs = new stack_cas_casstring($answers[$name]);
+                $ans = $answers[$name];
             }
+            // We always add logical nouns to students' answers.
+            $ans = stack_utils::logic_nouns_sort($ans, 'add');
+            $cs = new stack_cas_casstring($ans);
+
             // Validating as teacher at this stage removes the problem of "allowWords" which
             // we don't have access to.  This effectively allows any words here.  But the
             // student's answer has already been through validation.
@@ -177,6 +175,10 @@ class stack_potentialresponse_tree {
         $cascontext = $this->create_cas_context_for_evaluation($questionvars, $localoptions, $answers, $seed);
 
         $results = new stack_potentialresponse_tree_state($this->value, true, 0, 0);
+        $fv = $this->feedbackvariables;
+        if ($fv !== null) {
+            $results->add_trace($fv->get_keyval_representation());
+        }
 
         // Traverse the tree.
         $nodekey = $this->firstnode;
@@ -196,7 +198,7 @@ class stack_potentialresponse_tree {
             }
 
             $visitednodes[$nodekey] = true;
-            $nodekey = $this->nodes[$nodekey]->traverse($results, $nodekey, $cascontext, $localoptions);
+            $nodekey = $this->nodes[$nodekey]->traverse($results, $nodekey, $cascontext, $answers, $localoptions);
 
             if ($results->_errors) {
                 break;
@@ -210,12 +212,16 @@ class stack_potentialresponse_tree {
         // Restrict score to be between 0 and 1.
         $results->_score = min(max($results->_score, 0), 1);
 
+        // Take a continued fraction approximation of the score, within 5 decimal places of the original
+        // This will round numbers like 0.999999 to exactly 1, 0.33333 to 1/3, etc.
+        $results->_score = stack_utils::fix_to_continued_fraction($results->score, 5);
+
         // From a strictly logical point of view the 'score' and the 'penalty' are independent.
         // Hence, this clause belongs in the question behaviour.
         // From a practical point of view, it is confusing/off-putting when testing to see "score=1, penalty=0.1".
         // Why does this correct attempt attract a penalty?  So, this is a unilateral decision:
         // If the score is 1 there is never a penalty.
-        if ($results->_score > 0.99999995) {
+        if ($results->_score == 1) {
             $results->_penalty = 0;
         }
 
@@ -223,7 +229,6 @@ class stack_potentialresponse_tree {
             $results->_score = null;
             $results->_penalty = null;
         }
-
         $results->set_cas_context($cascontext, $seed);
         return $results;
     }
@@ -246,13 +251,13 @@ class stack_potentialresponse_tree {
             $rawcasstrings = array_merge($rawcasstrings, $node->get_required_cas_strings());
         }
 
+        // Remove strings in castrings so that strings like "...ans1..." do not match ans1.
+        $rawcasstring = stack_utils::eliminate_strings(implode('; ', $rawcasstrings));
+
         $requirednames = array();
         foreach ($variablenames as $name) {
-            foreach ($rawcasstrings as $string) {
-                if ($this->string_contains_variable($name, $string)) {
-                    $requirednames[] = $name;
-                    break;
-                }
+            if ($this->string_contains_variable($name, $rawcasstring)) {
+                $requirednames[] = $name;
             }
         }
         return $requirednames;
@@ -309,5 +314,21 @@ class stack_potentialresponse_tree {
      */
     public function get_value() {
         return $this->value;
+    }
+
+    /**
+     * @return string Representation of the PRT for Maxima offline use.
+     */
+    public function get_maxima_representation() {
+        $prttrace = array();
+        $prttrace[] = "\n/* ". $this->name . " */";
+        $fv = $this->feedbackvariables;
+        if ($fv !== null) {
+            $prttrace[] = $fv->get_keyval_representation();
+        }
+        foreach ($this->nodes as $key => $node) {
+            $prttrace[] = $node->get_maxima_representation();
+        }
+        return implode("\n", $prttrace);
     }
 }

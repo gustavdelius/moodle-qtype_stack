@@ -1,5 +1,5 @@
 <?php
-// This file is part of Stack - http://stack.bham.ac.uk/
+// This file is part of Stack - http://stack.maths.ed.ac.uk/
 //
 // Stack is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,25 +14,19 @@
 // You should have received a copy of the GNU General Public License
 // along with Stack.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Unit tests for stack_potentialresponse_node.
- *
- * @copyright  2012 The University of Birmingham
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-
+defined('MOODLE_INTERNAL') || die();
 
 require_once(__DIR__ . '/../stack/potentialresponsetree.class.php');
 require_once(__DIR__ . '/../stack/cas/castext.class.php');
 require_once(__DIR__ . '/../locallib.php');
-require_once(__DIR__ . '/test_base.php');
+require_once(__DIR__ . '/fixtures/test_base.php');
 
+// Unit tests for stack_potentialresponse_node.
+//
+// @copyright 2012 The University of Birmingham.
+// @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later.
 
 /**
- * Unit tests for stack_potentialresponse_node.
- *
- * @copyright  2012 The University of Birmingham
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @group qtype_stack
  */
 class stack_potentialresponse_node_test extends qtype_stack_testcase {
@@ -155,7 +149,7 @@ class stack_potentialresponse_node_test extends qtype_stack_testcase {
         $tans = new stack_cas_casstring('3*(x+2)');
         $tans->get_valid('t');
         $node = new stack_potentialresponse_node($sans, $tans, 'FacForm', 'x', true);
-        $node->add_branch(0, '+', 0.5, '', -1, 'Boo! Your answer should be in factored form, i.e. @factor(ans1)@.',
+        $node->add_branch(0, '+', 0.5, '', -1, 'Boo! Your answer should be in factored form, i.e. {@factor(ans1)@}.',
                 FORMAT_HTML, '1-0-0');
         $node->add_branch(1, '=', 2, '', 3, 'Yeah!', FORMAT_HTML, '1-0-1');
 
@@ -164,7 +158,7 @@ class stack_potentialresponse_node_test extends qtype_stack_testcase {
         $nextnode = $node->do_test('3*x+6', '3*(x+2)', 'x', $options, $result);
 
         $this->assertEquals(1, count($result->feedback));
-        $this->assertEquals('Boo! Your answer should be in factored form, i.e. @factor(ans1)@.',
+        $this->assertEquals('Boo! Your answer should be in factored form, i.e. {@factor(ans1)@}.',
                 $result->feedback[0]->feedback);
 
         $this->assertEquals(1.5, $result->score);

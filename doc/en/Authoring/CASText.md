@@ -14,17 +14,21 @@ The following things to remember about CASText:
 
 * Anything enclosed between `\( .... \)` symbols is treated as an _inline equation_, as is the case with normal LaTeX.  
 * Anything enclosed between matching `\[` and `\]` is treated as a _displayed equation_, in the centre of a new line. Again, this is the case with LaTeX.
-* We strongly discourage the use of dollar symbols such as `$...$` and `$$...$$` for denoting LaTeX mathematics environments.  See the notes on [currency](CASText.md#currency) below and also the page on [mathjax](../Developer/MathJax.md#delimiters) for more information.
+* We do not support the use of dollar symbols such as `$...$` and `$$...$$` for denoting LaTeX mathematics environments.  See the notes on [currency](CASText.md#currency) below and also the page on [mathjax](../Developer/Mathjax.md#delimiters) for more information. Dollar were supported in the past, but as of version 4. STACK no longer acknowledges `$` style LaTeX math environments when deciding whether to wrap output in math-mode.
 * Don't use LaTeX text formatting features such as `\\`, instead use the HTML versions.
-* Anything enclosed between `@` symbols is evaluated by the CAS and replaced by the LaTeX representing the result.  Some notes.
- * By default this is displayed as an _inline equation_.  This is analogous to using LaTeX symbols. Note however, that you don't need to use `\(@ stuff @\)`, and that `@ stuff @` is sufficient.
- * To get a displayed equation centred on a line of its own, you must use `\[@ stuff @\]`, as in LaTeX.
+* Anything enclosed between `{@` and `@}` delimiters is evaluated by the CAS and replaced by the LaTeX representing the result.  Some notes.
+ * By default this is displayed as an _inline equation_.  This is analogous to using LaTeX symbols. Note however, that you don't need to use `\({@ stuff @}\)`, and that `{@ stuff @}` is sufficient.
+ * To get a displayed equation centred on a line of its own, you must use `\[{@ stuff @}\]`, as in LaTeX.
+ * The outer `{}` characters of `{@ stuff @}` will be left into the output to ensure that the potentially multiple characters long output value is considered as a single group by LaTeX.
+* Anything enclosed between `{#` and `#}` delimiters is evaluated by the CAS and replaced by the Maxima representing the result. Basically, raw values usable in other tools or examples on how to input the value.
+* If the Maxima variable `x` is a string then `{@x@}` produces the string contents without quote marks or LaTeX environment, while `{#x#}` produces the string contents enclosed by quote marks.
 * Multiple CAS expressions may appear in a single LaTeX equation, as needed.  For example `\[  \frac{@p@}{@q@} \]`.  Note that many problems are _best solved_ at the level of the CAS, e.g. by defining a variable `p/q` in the CAS, not at the level of display.  This is a design decision which needs experience to resolve efficiently in each case.  For an example of this, see the example [showing working](../CAS/Matrix.md#Showing_working).
 
 Here is an example
 
-    The derivative of @ x^4/(1+x^4) @ is
-    \[ \frac{d}{dx} \frac{x^4}{1+x^4} = @ diff(x^4/(1+x^4),x) @ \]
+    The derivative of {@sin(1/(1+x^2))@} is
+    \[ \frac{\mathrm{d}}{\mathrm{d}x} \sin \left( \frac{1}{x^2+1} \right) = {@diff(sin(1/(1+x^2)),x)@} \]
+    You can input this as <code>{#diff(sin(1/(1+x^2)),x)#}</code>
 
 
 ## Variables ##   {#Variables}
@@ -40,22 +44,18 @@ The question text what the student actually sees.  This was called "question tex
 
 It is a slightly modified form of CAS text.  To allow a student to answer a question you must include an [inputs](Inputs.md) in the question text. For example, students need a box into which their answer will be put.
 
-To place an [inputs](Inputs.md) into the question enclose the
-name of the [Maxima](../CAS/Maxima.md) variable to which the student's answer is assigned between hash symbols, e.g. `#ans1#`
+To place an [input](Inputs.md) into the question enclose the name of the [Maxima](../CAS/Maxima.md) variable to which the student's answer is assigned between inside the following tag.  If the student's answer is going to be assigned to the variable `ans1` then use the tag `[[input:ans1]]`.  You will also be required to place a corresponding tag to indicate the position of any validation feedback (whether or not this is shown to the studen): `[[validation:ans1]]`.  You can use any legitimate variable name.
 
-When the question is created this is replaced with the appropriate [inputs](Inputs.md).
-When the student answers, this variable name is available to each [potential response trees](Potential_response_trees.md).
+* When the question is created this is replaced with the appropriate [input](Inputs.md).
+* When the student answers, this variable name is available to each [potential response trees](Potential_response_trees.md).
+* Inputs are created and deleted by adding appropriate tags to the question text.  Therefore, beware if you delete the tags as this will also delete the input from the question.
 
-Feedback can be included anywhere within the question text.
+To place another potential response tree in the question just choose a sensible name and add in a tag `[[feedback:prt1]]`.  
 
-* When you create an [inputs](Inputs.md) STACK automatically adds
-  a string such as the following.  `<IEfeedback>ans1</IEfeedback>`
-* When you create a [potential response trees](Potential_response_trees.md) STACK automatically adds
-  a string such as the following `<PRTfeedback>1</PRTfeedback>`
-
-These strings are replaced by appropriate feedback as necessary.
-They can be moved anywhere within the question text.
-Do **not** place feedback within LaTeX equations!
+* These tags are replaced by appropriate feedback as necessary.  Note, if you add the feedback to the question text this will always be shown by the STACK question, regardless of the quiz settings.  You may prefer to place the tags in the "specific feedback" block of the editing form.  Availability of the specific feedback is controlled by the Moodle quiz settings.  There is some compromise here between the ability to position the feedback tags anywhere in the question text (e.g. next to a particular input) and control over when it is shown.  This is most difficult in questions with many parts.  For a single part question we recommend you use the specific feedback block.
+* Tags can be moved anywhere within the question text.
+* Do **not** place feedback tags within LaTeX equations!
+* PRTs are created and deleted by adding appropriate tags to the question text.  Therefore, beware if you delete the tags as this will also delete the PRT from the question, which may result in lost work.
 
 ## General feedback/Worked solution {#general_feedback}
 
@@ -129,4 +129,3 @@ The [Google charts](http://code.google.com/apis/chart/) API can be used to creat
 ![](http://chart.apis.google.com/chart?cht=v&chs=200x100&chd=t:100,100,0,50&chdl=A|B)
 
 Details are given in the section on [plots](../CAS/Plots.md#google).
-

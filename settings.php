@@ -1,5 +1,5 @@
 <?php
-// This file is part of Stack - http://stack.bham.ac.uk/
+// This file is part of Stack - http://stack.maths.ed.ac.uk/
 //
 // Stack is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -72,6 +72,9 @@ $settings->add(new admin_setting_configselect('qtype_stack/maximaversion',
                       '5.32.0' => '5.32.0', '5.32.1' => '5.32.1', '5.33.0' => '5.33.0',
                       '5.34.0' => '5.34.0', '5.34.1' => '5.34.1', '5.35.1' => '5.35.1',
                       '5.35.1.2' => '3.35.1.2', '5.36.0' => '5.36.0', '5.36.1' => '5.36.1',
+                      '5.37.3' => '5.37.3', // Recently compiled GCL version for Windows is much faster.
+                      '5.38.0' => '5.38.0', '5.38.1' => '5.38.1', '5.39.0' => '5.39.0',
+                      '5.40.0' => '5.40.0', '5.41.0' => '5.41.0',
                       'default' => 'default')));
 
 $settings->add(new admin_setting_configtext('qtype_stack/castimeout',
@@ -96,6 +99,10 @@ $settings->add(new admin_setting_configtext('qtype_stack/serveruserpass',
 $settings->add(new admin_setting_configtext('qtype_stack/plotcommand',
         get_string('settingplatformplotcommand', 'qtype_stack'),
         get_string('settingplatformplotcommand_desc', 'qtype_stack'), ''));
+
+$settings->add(new admin_setting_configtext('qtype_stack/maximalibraries',
+        get_string('settingmaximalibraries', 'qtype_stack'),
+        get_string('settingmaximalibraries_desc', 'qtype_stack'), 'stats, distrib, descriptive, simplex'));
 
 $settings->add(new admin_setting_configcheckbox('qtype_stack/casdebugging',
         get_string('settingcasdebugging', 'qtype_stack'),
@@ -185,6 +192,11 @@ $settings->add(new admin_setting_configselect('qtype_stack/questionsimplify',
 $settings->add(new admin_setting_configselect('qtype_stack/assumepositive',
         get_string('assumepositive', 'qtype_stack'),
         get_string('assumepositive_help', 'qtype_stack'), '0',
+        stack_options::get_yes_no_options()));
+
+$settings->add(new admin_setting_configselect('qtype_stack/assumereal',
+        get_string('assumereal', 'qtype_stack'),
+        get_string('assumereal_help', 'qtype_stack'), '0',
         stack_options::get_yes_no_options()));
 
 $settings->add(new admin_setting_configtextarea('qtype_stack/prtcorrect',

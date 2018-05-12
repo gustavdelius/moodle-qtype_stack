@@ -50,7 +50,7 @@ class backup_qtype_stack_plugin extends backup_qtype_plugin {
         // Now create the necessary elements.
         $stackoptions = new backup_nested_element('stackoptions', array('id'),
                 array('questionvariables', 'specificfeedback', 'specificfeedbackformat',
-                      'questionnote', 'questionsimplify', 'assumepositive',
+                      'questionnote', 'questionsimplify', 'assumepositive', 'assumereal',
                       'prtcorrect', 'prtcorrectformat', 'prtpartiallycorrect', 'prtpartiallycorrectformat',
                       'prtincorrect', 'prtincorrectformat', 'multiplicationsign', 'sqrtsign',
                       'complexno', 'inversetrig', 'matrixparens', 'variantsselectionseed'));
@@ -58,7 +58,7 @@ class backup_qtype_stack_plugin extends backup_qtype_plugin {
         $stackinputs = new backup_nested_element('stackinputs');
         $stackinput = new backup_nested_element('stackinput', array('id'),
                 array('name', 'type', 'tans', 'boxsize', 'strictsyntax', 'insertstars',
-                       'syntaxhint', 'forbidwords', 'allowwords', 'forbidfloat', 'requirelowestterms',
+                       'syntaxhint', 'syntaxattribute', 'forbidwords', 'allowwords', 'forbidfloat', 'requirelowestterms',
                        'checkanswertype', 'mustverify', 'showvalidation', 'options'));
 
         $stackprts = new backup_nested_element('stackprts');
@@ -74,7 +74,7 @@ class backup_qtype_stack_plugin extends backup_qtype_plugin {
                       'falseanswernote', 'falsefeedback', 'falsefeedbackformat'));
 
         $stackqtests = new backup_nested_element('stackqtests');
-        $stackqtest = new backup_nested_element('stackqtest', array('id'), array('testcase'));
+        $stackqtest = new backup_nested_element('stackqtest', array('id'), array('testcase', 'timemodified'));
 
         $stackqtestinputs = new backup_nested_element('stackqtestinputs');
         $stackqtestinput = new backup_nested_element('stackqtestinput', array('id'),
@@ -83,6 +83,8 @@ class backup_qtype_stack_plugin extends backup_qtype_plugin {
         $stackqtestexpecteds = new backup_nested_element('stackqtestexpecteds');
         $stackqtestexpected = new backup_nested_element('stackqtestexpected', array('id'),
                 array('prtname', 'expectedscore', 'expectedpenalty', 'expectedanswernote'));
+
+        // Note, we intentionally don't backup stack_qtest_results. That is derived data.
 
         $stackdeployedseeds = new backup_nested_element('stackdeployedseeds');
         $stackdeployedseed = new backup_nested_element('stackdeployedseed', array('id'), array('seed'));

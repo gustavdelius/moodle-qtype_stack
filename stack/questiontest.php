@@ -1,5 +1,5 @@
 <?php
-// This file is part of Stack - http://stack.bham.ac.uk/
+// This file is part of Stack - http://stack.maths.ed.ac.uk/
 //
 // Stack is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,25 +14,22 @@
 // You should have received a copy of the GNU General Public License
 // along with Stack.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Holds the data defining one question test.
- *
- * @copyright 2012 The Open University
- * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
+defined('MOODLE_INTERNAL') || die();
 
+// Holds the data defining one question test.
+//
+// @copyright 2012 The Open University.
+// @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later.
 
 require_once(__DIR__ . '/questiontestresult.php');
 require_once(__DIR__ . '/potentialresponsetree.class.php');
 
-
-/**
- * One question test.
- *
- * @copyright 2012 The Open University
- * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
 class stack_question_test {
+    /**
+     * @var int|null test-case number, if this is a real test stored in the database, else null.
+     */
+    public $testcase;
+
     /**
      * @var array input name => value to be entered.
      */
@@ -41,14 +38,16 @@ class stack_question_test {
     /**
      * @var array prt name => stack_potentialresponse_tree_state object
      */
-    public $expectedresults;
+    public $expectedresults = array();
 
     /**
      * Constructor
      * @param array $inputs input name => value to enter.
+     * @param int $testcase test-case number, if this is a real test stored in the database.
      */
-    public function __construct($inputs) {
+    public function __construct($inputs, $testcase = null) {
         $this->inputs = $inputs;
+        $this->testcase = $testcase;
     }
 
     /**
@@ -96,6 +95,10 @@ class stack_question_test {
             $results->set_prt_result($prtname, $result);
         }
 
+        if ($this->testcase) {
+            $this->save_result($question, $results);
+        }
+
         return $results;
     }
 
@@ -129,14 +132,13 @@ class stack_question_test {
                 }
             }
         }
-
         $cascontext->add_vars($vars);
         $cascontext->instantiate();
 
         $response = array();
         foreach ($inputs as $name => $notused) {
-            $computedinput = $cascontext->get_value_key('testresponse_' . $name);
-            // In the case we start with an invalid input, and hence don't send it to the CAS
+            $computedinput = $cascontext->get_value_key('testresponse_' . $name, true);
+            // In the case we start with an invalid input, and hence don't send it to the CAS.
             // We want the response to constitute the raw invalid input.
             // This permits invalid expressions in the inputs, and to compute with valid expressions.
             if ('' == $computedinput) {
@@ -155,5 +157,34 @@ class stack_question_test {
      */
     public function get_input($inputname) {
         return $this->inputs[$inputname];
+    }
+
+    /**
+     * Store the outcome of running a test in qtype_stack_qtest_results.
+     *
+     * @param qtype_stack_question $question the question being tested.
+     * @param stack_question_test_result $result the test result.
+     */
+    protected function save_result(qtype_stack_question $question,
+            stack_question_test_result $result) {
+        global $DB;
+
+        $existingresult = $DB->get_record('qtype_stack_qtest_results',
+                array('questionid' => $question->id, 'testcase' => $this->testcase, 'seed' => $question->seed),
+                '*', IGNORE_MISSING);
+
+        if ($existingresult) {
+            $existingresult->result = (int) $result->passed();
+            $existingresult->timerun = time();
+            $DB->update_record('qtype_stack_qtest_results', $existingresult);
+        } else {
+            $DB->insert_record('qtype_stack_qtest_results', array(
+                    'questionid' => $question->id,
+                    'testcase' => $this->testcase,
+                    'seed' => $question->seed,
+                    'result' => $result->passed(),
+                    'timerun' => time(),
+            ));
+        }
     }
 }

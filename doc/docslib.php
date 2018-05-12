@@ -1,5 +1,5 @@
 <?php
-// This file is part of Stack - http://stack.bham.ac.uk/
+// This file is part of Stack - http://stack.maths.ed.ac.uk/
 //
 // Stack is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -140,7 +140,7 @@ function stack_docs_render_markdown($page, $docscontent) {
     if (strpos($page, '[[ALL_FACTS]]') > 0) {
         $page = str_replace('[[ALL_FACTS]]', stack_fact_sheets::generate_docs(), $page);
     }
-    $page = format_text($page, $format = FORMAT_MARKDOWN);
+    $page = format_text($page, FORMAT_MARKDOWN, array('filter' => false, 'noclean' => true));
     $page = stack_maths::post_process_docs_page($page);
     return $page;
 }

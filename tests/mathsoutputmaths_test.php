@@ -1,5 +1,5 @@
 <?php
-// This file is part of Stack - http://stack.bham.ac.uk/
+// This file is part of Stack - http://stack.maths.ed.ac.uk/
 //
 // Stack is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,24 +14,18 @@
 // You should have received a copy of the GNU General Public License
 // along with Stack.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Unit tests for the OU maths filter output class.
- *
- * @package   qtype_stack
- * @copyright 2012 The Open University
- * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
+defined('MOODLE_INTERNAL') || die();
 
 require_once(__DIR__ . '/../stack/mathsoutput/mathsoutput.class.php');
 require_once(__DIR__ . '/../stack/mathsoutput/mathsoutputmaths.class.php');
 require_once(__DIR__ . '/../doc/docslib.php');
 
+// Unit tests for the OU maths filter output class.
+//
+// @copyright 2012 The Open University.
+// @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later.
 
 /**
- * Unit tests for the OU maths filter output class.
- *
- * @copyright 2012 The Open University
- * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @group qtype_stack
  */
 class stack_maths_maths_test extends advanced_testcase {
@@ -63,8 +57,8 @@ class stack_maths_maths_test extends advanced_testcase {
                 stack_docs_render_markdown('<code>\(x^2\)</code> gives \(x^2\).', ''));
 
         // Test docs - make sure maths inside <textarea> is not rendered.
-        $this->assertRegExp('~^<p>\n' .
-                        'Differentiate \\\\\\\\\[x\^2 \+ y\^2\\\\\\\\\] with respect to \\\\\\\\\(x\\\\\\\\\).</p>\n$~',
+        $this->assertRegExp('~^<p><textarea readonly="readonly" rows="3" cols="50">\n' .
+                        'Differentiate \\\\\[x\^2 \+ y\^2\\\\\] with respect to \\\\\(x\\\\\).</textarea></p>\n$~',
                 stack_docs_render_markdown('<textarea readonly="readonly" rows="3" cols="50">' . "\n" .
                         'Differentiate \[x^2 + y^2\] with respect to \(x\).</textarea>', ''));
 

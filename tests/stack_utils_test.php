@@ -1,5 +1,5 @@
 <?php
-// This file is part of Stack - http://stack.bham.ac.uk/
+// This file is part of Stack - http://stack.maths.ed.ac.uk/
 //
 // Stack is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,25 +14,23 @@
 // You should have received a copy of the GNU General Public License
 // along with Stack.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Unit tests for stack_utils.
- *
- * @copyright  2012 The Open Unviersity
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
+defined('MOODLE_INTERNAL') || die();
 
+require_once(__DIR__ . '/fixtures/test_base.php');
+require_once(__DIR__ . '/fixtures/numbersfixtures.class.php');
 require_once(__DIR__ . '/../locallib.php');
 require_once(__DIR__ . '/../stack/utils.class.php');
+require_once(__DIR__ . '/../stack/cas/cassession.class.php');
 
+// Unit tests for stack_utils.
+//
+// @copyright 2012 The Open Unviersity.
+// @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later.
 
 /**
- * Unit tests for stack_utils.
- *
- * @copyright  2012 The Open Unviersity
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @group qtype_stack
  */
-class stack_utils_test extends basic_testcase {
+class stack_utils_test extends qtype_stack_testcase {
 
     public function test_matching_pairs() {
         $this->assertTrue(stack_utils::check_matching_pairs('Hello $world$!', '$'));
@@ -101,6 +99,9 @@ class stack_utils_test extends basic_testcase {
         $this->assertEquals(array('hello', 'wor'), stack_utils::all_substring_between('[he[llo] [wor]ld]!', '[', ']'));
     }
 
+    /**
+     * @expectedException stack_exception
+     */
     public function test_replace_between() {
         $this->assertEquals('hello world!', stack_utils::replace_between('hello world!', '[', ']', array()));
         $this->assertEquals('[goodbye] world!', stack_utils::replace_between('[hello] world!', '[', ']', array('goodbye')));
@@ -112,7 +113,6 @@ class stack_utils_test extends basic_testcase {
         $this->assertEquals('$goodbye$ $all$!',
                 stack_utils::replace_between('$hello$ $world$!', '$', '$', array('goodbye', 'all')));
 
-        $this->setExpectedException('stack_exception');
         $this->assertEquals('goodbye all!', stack_utils::replace_between('$hello$ $world$!', '$', '$', array('1', '2', '3')));
     }
 
@@ -195,5 +195,91 @@ class stack_utils_test extends basic_testcase {
         $this->assertEquals(array('i' => 'j', 'h' => 'i', 'a' => 'temp1', 'e' => 'a', 'g' => 'e', 'temp1' => 'g',
                 'd' => 'temp2', 'f' => 'd', 'temp2' => 'f'), stack_utils::decompose_rename_operation(
                 array('a' => 'g', 'b' => 'b', 'd' => 'f', 'd' => 'f', 'e' => 'a', 'f' => 'd', 'g' => 'e', 'h' => 'i', 'i' => 'j')));
+    }
+
+    public function test_all_substring_strings() {
+        $this->assertEquals(array("test", "testb"), stack_utils::all_substring_strings("stringa:\"test\" and stringb:\"testb\""));
+        $this->assertEquals(array("", "\\\""), stack_utils::all_substring_strings("stringa:\"\" and stringb:\"\\\"\""));
+    }
+
+    public function test_eliminate_strings() {
+        $this->assertEquals('before""after', stack_utils::eliminate_strings('before"inside"after'));
+        $this->assertEquals('""after', stack_utils::eliminate_strings('"atstart"after'));
+        $this->assertEquals('before""', stack_utils::eliminate_strings('before"atend"'));
+        $this->assertEquals('""', stack_utils::eliminate_strings('""'));
+        $this->assertEquals('stringa:"" and stringb:""', stack_utils::eliminate_strings("stringa:\"test\" and stringb:\"testb\""));
+        $this->assertEquals('stringa:"" and stringb:""', stack_utils::eliminate_strings("stringa:\"\" and stringb:\"\\\"\""));
+        $this->assertEquals('ssubst("","",x)', stack_utils::eliminate_strings('ssubst("times",",",x)'));
+    }
+
+    public function test_decimal_digits() {
+
+        $tests = stack_numbers_test_data::get_raw_test_data();
+
+        foreach ($tests as $t) {
+            $r = stack_utils::decimal_digits($t[0]);
+            $this->assertEquals($r['lowerbound'], $t[1]);
+            $this->assertEquals($r['upperbound'], $t[2]);
+            $this->assertEquals($r['decimalplaces'], $t[3]);
+            $this->assertEquals($r['fltfmt'], $t[4]);
+        }
+
+    }
+
+    public function test_decimal_digits_utils() {
+
+        $tests = stack_numbers_test_data::get_raw_test_data_utils();
+
+        foreach ($tests as $t) {
+            $r = stack_utils::decimal_digits($t[0]);
+            $this->assertEquals($r['lowerbound'], $t[1]);
+            $this->assertEquals($r['upperbound'], $t[2]);
+            $this->assertEquals($r['decimalplaces'], $t[3]);
+            $this->assertEquals($r['fltfmt'], $t[4]);
+        }
+
+    }
+
+    public function test_single_char_vars_2() {
+
+        $testcases = array('ab' => 'a*b',
+            'abc' => 'a*b*c',
+            'ab*c+a+(b+cd)' => 'a*b*c+a+(b+c*d)',
+            'sin(xy)' => 'sin(x*y)',
+            'sin(xy)+cos(ab)+c' => 'sin(x*y)+cos(a*b)+c',
+            'xe^x' => 'x*e^x',
+            'pix' => 'p*i*x',
+            '2(xya+3c)' => '2(x*y*a+3c)',
+            '2pi+nk' => '2pi+n*k',  // This function does not add the star in 2*pi here.  That is done elsewhere.
+            '(ax+1)(ax-1)' => '(a*x+1)(a*x-1)',
+            'nx(1+2x)' => 'nx(1+2x)' // Note, two letter function names are permitted.
+        );
+
+        foreach ($testcases as $test => $result) {
+            $this->assertEquals($result, stack_utils::make_single_char_vars($test, null, false, 2, ''));
+        }
+
+    }
+
+    public function test_single_char_vars_5() {
+
+        $testcases = array('ab' => 'a*b',
+            'abc' => 'a*b*c',
+            'ab*c+a+(b+cd)' => 'a*b*c+a+(b+c*d)',
+            'sin(xy)' => 'sin(x*y)',
+            'sin(xy)+cos(ab)+c' => 'sin(x*y)+cos(a*b)+c',
+            'xe^x' => 'x*e^x',
+            'pix' => 'p*i*x',
+            '2(xya+3c)' => '2*(x*y*a+3*c)',
+            '2pi+nk' => '2*pi+n*k',
+            '(ax+1)(ax-1)' => '(a*x+1)*(a*x-1)',
+            'nx(1+2x)' => 'nx(1+2*x)' // Note, two letter function names are permitted.
+        );
+
+        foreach ($testcases as $test => $result) {
+            $this->resetAfterTest();
+            $this->assertEquals($result, stack_utils::make_single_char_vars($test, null, false, 5, ''));
+        }
+
     }
 }

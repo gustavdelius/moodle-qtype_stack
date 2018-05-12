@@ -1,5 +1,5 @@
 <?php
-// This file is part of Stack - http://stack.bham.ac.uk/
+// This file is part of Stack - http://stack.maths.ed.ac.uk/
 //
 // Stack is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Stack.  If not, see <http://www.gnu.org/licenses/>.
 
+defined('MOODLE_INTERNAL') || die();
 
 /**
  * A basic text-field input.
@@ -22,7 +23,6 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class stack_matrix_input extends stack_input {
-    protected $errors = null;
     protected $width;
     protected $height;
 
@@ -35,7 +35,7 @@ class stack_matrix_input extends stack_input {
         $at1->instantiate();
 
         if ('' != $at1->get_errors()) {
-            $this->errors = $at1->get_errors();
+            $this->errors[] = $at1->get_errors();
             return;
         }
 
@@ -56,7 +56,7 @@ class stack_matrix_input extends stack_input {
             }
         }
 
-        // I am assuming that the valdiation will write one CAS string in a
+        // The valdiation will write one CAS string in a
         // hidden input, that is the combination of all the separate inputs.
         if ($this->requires_validation()) {
             $expected[$this->name . '_val'] = PARAM_RAW;
@@ -135,10 +135,13 @@ class stack_matrix_input extends stack_input {
         $firstrow = array_fill(0, $this->width, '');
         $tc       = array_fill(0, $this->height, $firstrow);
 
-        // Turn the student's answer into a PHP array.
+        // Turn the student's answer, syntax hint, etc., into a PHP array.
         $t = trim($in);
         if ('matrix(' == substr($t, 0, 7)) {
-            $rows = $this->modinput_tokenizer(substr($t, 7, -1));  // E.g. array("[a,b]","[c,d]").
+            // @codingStandardsIgnoreStart
+            // E.g. array("[a,b]","[c,d]").
+            // @codingStandardsIgnoreEnd
+            $rows = $this->modinput_tokenizer(substr($t, 7, -1));
             for ($i = 0; $i < count($rows); $i++) {
                 $row = $this->modinput_tokenizer(substr($rows[$i], 1, -1));
                 $tc[$i] = $row;
@@ -158,16 +161,25 @@ class stack_matrix_input extends stack_input {
      * @param array $contents the content array of the student's input.
      * @return array of the validity, errors strings and modified contents.
      */
-    protected function validate_contents($contents, $forbiddenkeys) {
+    protected function validate_contents($contents, $forbiddenkeys, $localoptions) {
 
-        $errors = $this->extra_validation($contents);
-        $valid = !$errors;
+        $errors = array();
+        $valid = true;
 
         // Now validate the input as CAS code.
         $modifiedcontents = array();
         foreach ($contents as $row) {
             $modifiedrow = array();
             foreach ($row as $val) {
+                // Process single character variable names in PHP.
+                // Note, this does potentially call the CAS for each element of the matrix.
+                // To reduce this load, stack_utils::make_single_char_vars only calls the CAS when we have letters.
+                if (2 == $this->get_parameter('insertStars', 0) || 5 == $this->get_parameter('insertStars', 0)) {
+                    $val = stack_utils::make_single_char_vars($val, $localoptions,
+                            $this->get_parameter('strictSyntax', true), $this->get_parameter('insertStars', 0),
+                            $this->get_parameter('allowWords', ''));
+                }
+
                 $answer = new stack_cas_casstring($val);
                 $answer->get_valid('s', $this->get_parameter('strictSyntax', true),
                         $this->get_parameter('insertStars', 0),  $this->get_parameter('allowwords', ''));
@@ -184,27 +196,35 @@ class stack_matrix_input extends stack_input {
 
                 $modifiedrow[] = $answer->get_casstring();
                 $valid = $valid && $answer->get_valid();
-                $errors .= $answer->get_errors();
+                $errors[] = $answer->get_errors();
             }
             $modifiedcontents[] = $modifiedrow;
         }
 
-        return array($valid, $errors, $modifiedcontents);
+        $caslines = array();
+        return array($valid, $errors, $modifiedcontents, $caslines);
     }
 
-    public function render(stack_input_state $state, $fieldname, $readonly) {
+    public function render(stack_input_state $state, $fieldname, $readonly, $tavalue) {
+
+        if ($this->errors) {
+            return $this->render_error($this->errors);
+        }
+
         $attributes = array(
             'type' => 'text',
             'name' => $fieldname,
         );
 
-        if ($this->errors) {
-            // If there are errors, don't try to display anything else.
-            return html_writer::tag('p', $this->errors, array('id' => 'error', 'class' => 'p'));
-        }
-
         $tc = $state->contents;
         $blank = $this->is_blank_response($state->contents);
+        if ($blank) {
+            $syntaxhint = stack_utils::logic_nouns_sort($this->parameters['syntaxHint'], 'remove');
+            if (trim($syntaxhint) != '') {
+                $tc = $this->maxima_to_array($syntaxhint);
+                $blank = false;
+            }
+        }
 
         if ($readonly) {
             $readonlyattr = ' readonly="readonly"';
@@ -229,9 +249,6 @@ class stack_matrix_input extends stack_input {
                 $val = '';
                 if (!$blank) {
                     $val = trim($tc[$i][$j]);
-                }
-                if ('?' == $val) {
-                    $val = '';
                 }
                 $name = $fieldname.'_sub_'.$i.'_'.$j;
                 $xhtml .= '<td><input type="text" name="'.$name.'" value="'.$val.'" size="'.
@@ -292,21 +309,22 @@ class stack_matrix_input extends stack_input {
      */
     public static function get_parameters_defaults() {
         return array(
-            'mustVerify'     => true,
-            'showValidation' => 1,
-            'boxWidth'       => 5,
-            'strictSyntax'   => false,
-            'insertStars'    => 0,
-            'syntaxHint'     => '',
-            'forbidWords'    => '',
-            'allowWords'     => '',
-            'forbidFloats'   => true,
-            'lowestTerms'    => true,
-            'sameType'       => true);
+            'mustVerify'         => true,
+            'showValidation'     => 1,
+            'boxWidth'           => 5,
+            'strictSyntax'       => false,
+            'insertStars'        => 0,
+            'syntaxHint'         => '',
+            'syntaxAttribute'    => 0,
+            'forbidWords'        => '',
+            'allowWords'         => '',
+            'forbidFloats'       => true,
+            'lowestTerms'        => true,
+            'sameType'           => true);
     }
 
     /**
-     * Each actual extension of this base class must decide what parameter values are valid
+     * Each actual extension of this base class must decide what parameter values are valid.
      * @return array of parameters names.
      */
     public function internal_validate_parameter($parameter, $value) {
@@ -317,6 +335,20 @@ class stack_matrix_input extends stack_input {
                 break;
         }
         return $valid;
+    }
+
+    /**
+     * The AJAX instant validation method mostly returns a Maxima expression.
+     * Mostly, we need an array, labelled with the input name.
+     *
+     * The matrix type is different.  The javascript creates a single Maxima expression,
+     * and we need to split this up into an array of individual elements.
+     *
+     * @param string $in
+     * @return array
+     */
+    protected function ajax_to_response_array($in) {
+        return  $this->maxima_to_response_array($in);
     }
 
     /**

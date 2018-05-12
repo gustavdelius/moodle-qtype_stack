@@ -1,5 +1,5 @@
 <?php
-// This file is part of Stack - http://stack.bham.ac.uk/
+// This file is part of Stack - http://stack.maths.ed.ac.uk/
 //
 // Stack is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Stack.  If not, see <http://www.gnu.org/licenses/>.
 
+defined('MOODLE_INTERNAL') || die();
 
 /**
  * Class which undertakes process control to connect to Maxima.
@@ -42,12 +43,13 @@ class stack_cas_connection_db_cache implements stack_cas_connection {
         $this->db = $db;
     }
 
-    /* @see stack_cas_connection::compute() */
     public function compute($command) {
         $cached = $this->get_cached_result($command);
         if ($cached->result) {
             $this->debug->log('Maxima command', $command);
+            // @codingStandardsIgnoreStart
             $this->debug->log('Unpacked result found in the DB cache', print_r($cached->result, true));
+            // @codingStandardsIgnoreEnd
             if (!stack_connection_helper::check_stackmaxima_version($cached->result)) {
                 stack_connection_helper::warn_about_version_mismatch($this->debug);
                 // We could consider automatically purging the cache here.
@@ -63,7 +65,6 @@ class stack_cas_connection_db_cache implements stack_cas_connection {
         return $result;
     }
 
-    /* @see stack_cas_connection::get_debuginfo() */
     public function get_debuginfo() {
         return $this->debug->get_log();
     }

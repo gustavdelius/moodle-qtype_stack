@@ -1,5 +1,5 @@
 <?php
-// This file is part of Stack - http://stack.bham.ac.uk/
+// This file is part of Stack - http://stack.maths.ed.ac.uk/
 //
 // Stack is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,22 +14,16 @@
 // You should have received a copy of the GNU General Public License
 // along with Stack.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Unit tests for the stack_input_state class.
- *
- * @copyright  2012 The Open University
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-
+defined('MOODLE_INTERNAL') || die();
 
 require_once(__DIR__ . '/../stack/input/inputbase.class.php');
 
+// Unit tests for stack_input_state.
+//
+// @copyright  2012 The Open University.
+// @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later.
 
 /**
- * Unit tests for stack_input_state.
- *
- * @copyright  2012 The Open University
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @group qtype_stack
  */
 class stack_input_state_test extends basic_testcase {
@@ -44,16 +38,20 @@ class stack_input_state_test extends basic_testcase {
         $this->assertEquals('CASError', $state->note);
     }
 
+    /**
+     * @expectedException stack_exception
+     */
     public function test_constructor() {
-        $this->setExpectedException('stack_exception');
         $state = new stack_input_state(stack_input::INVALID, 'frog',
                 'frog', 'frog', 'Your answer is not an expression.', '', '');
     }
 
+    /**
+     * @expectedException stack_exception
+     */
     public function test_unrecognised_property() {
         $state = new stack_input_state(stack_input::INVALID, array('frog'),
                 'frog', 'frog', 'Your answer is not an expression.', '', '');
-        $this->setExpectedException('stack_exception');
         $x = $state->unknownproperty;
     }
 }

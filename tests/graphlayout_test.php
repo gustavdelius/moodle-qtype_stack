@@ -1,5 +1,5 @@
 <?php
-// This file is part of Stack - http://stack.bham.ac.uk/
+// This file is part of Stack - http://stack.maths.ed.ac.uk/
 //
 // Stack is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,22 +14,16 @@
 // You should have received a copy of the GNU General Public License
 // along with Stack.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Unit tests for stack_utils.
- *
- * @package   qtype_stack
- * @copyright 2013 The Open Unviersity
- * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
+defined('MOODLE_INTERNAL') || die();
 
 require_once(__DIR__ . '/../stack/graphlayout/graph.php');
 
+// Unit tests for stack_abstract_graph and friends.
+//
+// @copyright 2013 The Open Unviersity.
+// @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later.
 
 /**
- * Unit tests for stack_abstract_graph and friends.
- *
- * @copyright 2013 The Open Unviersity
- * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @group qtype_stack
  */
 class stack_abstract_graph_test extends basic_testcase {
@@ -129,11 +123,11 @@ class stack_abstract_graph_test extends basic_testcase {
 
         $n = $graph->get(1);
         $this->assertEquals(1, $n->depth);
-        $this->assertEquals(2, $n->x);
+        $this->assertEquals(0, $n->x);
 
         $n = $graph->get(2);
         $this->assertEquals(1, $n->depth);
-        $this->assertEquals(0, $n->x);
+        $this->assertEquals(2, $n->x);
 
         $this->assertEmpty($graph->get_broken_cycles());
         $this->assertSame(array(1, 2), array_keys($graph->get_roots()));
@@ -141,12 +135,13 @@ class stack_abstract_graph_test extends basic_testcase {
 
     /**
      * This graph has a link to a non-existent node. We verify that throws an exception.
+     *
+     * @expectedException coding_exception
      */
     public function test_missing_node() {
         $graph = new stack_abstract_graph();
         $graph->add_node(1, null, 2, '=1', '=0');
 
-        $this->setExpectedException('coding_exception');
         $graph->layout();
     }
 

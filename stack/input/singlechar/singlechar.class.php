@@ -1,5 +1,5 @@
 <?php
-// This file is part of Stack - http://stack.bham.ac.uk/
+// This file is part of Stack - http://stack.maths.ed.ac.uk/
 //
 // Stack is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Stack.  If not, see <http://www.gnu.org/licenses/>.
 
+defined('MOODLE_INTERNAL') || die();
 
 /**
  * Input that accepts a single character.
@@ -23,7 +24,11 @@
  */
 class stack_singlechar_input extends stack_input {
 
-    public function render(stack_input_state $state, $fieldname, $readonly) {
+    public function render(stack_input_state $state, $fieldname, $readonly, $tavalue) {
+
+        if ($this->errors) {
+            return $this->render_error($this->errors);
+        }
 
         $attributes = array(
             'type'      => 'text',

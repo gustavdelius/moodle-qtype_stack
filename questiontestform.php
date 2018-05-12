@@ -1,5 +1,5 @@
 <?php
-// This file is part of Stack - http://stack.bham.ac.uk/
+// This file is part of Stack - http://stack.maths.ed.ac.uk/
 //
 // Stack is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -42,7 +42,7 @@ class qtype_stack_question_test_form extends moodleform {
         // Inputs.
         $mform->addElement('header', 'inputsheader', stack_string('testinputs'));
 
-        foreach ($question->inputs as $inputname => $input) {
+        foreach ($question->inputs as $input) {
             // We do not require these to be filled in, (or contain valid input), as the teacher may want to test such cases.
             $input->add_to_moodleform_testinput($mform);
         }
@@ -53,7 +53,11 @@ class qtype_stack_question_test_form extends moodleform {
         // Expected outcome.
         $mform->addElement('header', 'prtsheader', stack_string('expectedoutcomes'));
 
+        $allinputs = array_keys($question->inputs);
         foreach ($question->prts as $prtname => $prt) {
+            $inputsused = $prt->get_required_variables($allinputs);
+            $inputsused = ': [' . implode(', ' , $inputsused) . ']';
+
             $elements = array(
                 $mform->createElement('text', $prtname . 'score',
                     stack_string('score'), array('size' => 2)),
@@ -62,7 +66,7 @@ class qtype_stack_question_test_form extends moodleform {
                 $mform->createElement('select', $prtname . 'answernote',
                     stack_string('answernote'), $prt->get_all_answer_notes()),
             );
-            $mform->addGroup($elements, $prtname . 'group', $prtname, ' ', false);
+            $mform->addGroup($elements, $prtname . 'group', $prtname . $inputsused, ' ', false);
             $mform->setType($prtname . 'score', PARAM_RAW);
             $mform->setType($prtname . 'penalty', PARAM_RAW);
             $mform->setType($prtname . 'answernote', PARAM_RAW);

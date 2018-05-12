@@ -1,5 +1,5 @@
 <?php
-// This file is part of Stack - http://stack.bham.ac.uk/
+// This file is part of Stack - http://stack.maths.ed.ac.uk/
 //
 // Stack is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,36 +14,32 @@
 // You should have received a copy of the GNU General Public License
 // along with Stack.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Unit tests for the MathJax maths output class.
- *
- * @package   qtype_stack
- * @copyright 2012 The Open University
- * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
+defined('MOODLE_INTERNAL') || die();
 
+require_once(__DIR__ . '/fixtures/test_base.php');
 require_once(__DIR__ . '/../stack/mathsoutput/mathsoutput.class.php');
 require_once(__DIR__ . '/../doc/docslib.php');
 
+// Unit tests for the MathJax maths output class.
+//
+// @copyright 2012 The Open University.
+// @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later.
 
 /**
- * Unit tests for the MathJax maths output class.
- *
- * @copyright 2012 The Open University
- * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @group qtype_stack
  */
-class stack_maths_mathjax_test extends advanced_testcase {
+class stack_maths_mathjax_test extends qtype_stack_testcase {
 
     public function test_maths_output_mathsjax() {
-        filter_set_global_state('mathjaxloader', TEXTFILTER_DISABLED);
 
         // MathJax output is the default.
-        $this->assertEquals('Your answer needs to be a single fraction of the form \( {a}\over{b} \). ',
+        $this->assertContentWithMathsEquals('Your answer needs to be a single fraction of the form \( {a}\over{b} \). ',
                 stack_string('ATSingleFrac_part'));
 
-        $this->assertEquals("<p><code>\(x^2\)</code> gives \\(x^2\\).</p>\n",
-                stack_docs_render_markdown('`\(x^2\)` gives \(x^2\).', ''));
+        // @codingStandardsIgnoreStart
+        $this->assertContentWithMathsEquals("<p><code>\\(x^2\\)</code> gives \\(x^2\\).</p>\n",
+                stack_docs_render_markdown('`\(x^2\)` gives \(x^2\).', '.../doc/content'));
+        // @codingStandardsIgnoreEnd
 
         $this->assertEquals('What is \(x^2\)?', stack_maths::process_display_castext('What is \(x^2\)?'));
 

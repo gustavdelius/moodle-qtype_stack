@@ -4,8 +4,9 @@ _This list is currently incomplete_.
 
 More details of our development history is given in the [development track](../Developer/Development_track.md).
 
-* [Chris Sangwin](http://web.mat.bham.ac.uk/C.J.Sangwin/) of the University of Birmingham. STACK is the brainchild of Chris Sangwin.
-* [Tim Hunt](http://tjhunt.blogspot.co.uk/) of the Open University.
+* [Chris Sangwin](http://www.maths.ed.ac.uk/~csangwin/) of the University of Edinburgh. STACK is the brainchild of Chris Sangwin.
+* [Tim Hunt](http://tjhunt.blogspot.co.uk/) and Time Lowe of the Open University.
+* Matti Harjula of Aalto University, Finland.
 * Matti Pauna of the University of Helsinki.
 
 Previous developers have included.
@@ -24,22 +25,22 @@ Currently STACK is released with the following languages.
   * EN: English (British), by Chris Sangwin (and others)
   * FI: Finnish, by Matti Pauna
   * SV: Swedish, by Mikael Kurula
-  * ES: Spanish, by VÌctor Hugo Huerta 
+  * ES: Spanish, by Victor Hugo Huerta 
   * JA: Japanese, by Yasuyuki Nakamura and Takahiro Nakahara  
 
+# Other implementations and projects
+
+STACK questions have also been included in the ILIAS project.
 
 # User list
 
 The following institutions made use of previous versionf of STACK.  If you are actively using or trialling STACK and would like to be listed below then please contact the developers.
 
-School of Mathematics, The University of Birmingham
-: The home of STACK. Contact [Chris Sangwin](mailto:c.sangwin@bham.ac.uk).
+School of Mathematics, The University of Edinburgh
+: The home of STACK. Contact [Chris Sangwin](mailto:c.j.sangwin@ed.ac.uk).
 
-School of Mathematics, The University of Manchester
-: Contact P Bolton
-
-Technical University of Helsinki
-: Contact [Antti Rasila](http://math.tkk.fi/en/research/matta/)
+School of Science, Aalto University, Helsinki, Finland
+: Contact Matti Harjula and [Antti Rasila](http://math.tkk.fi/en/research/matta/)
 
 School of Informatics and Sciences, Nagoya University, Japan
 : Contact [Yasuyuki Nakamura](mailto:nakamura@nagoya-u.jp)
@@ -56,11 +57,11 @@ School of Physics, The University of Birmingham
 School of Computing, Information and Mathematical Sciences, The University of the South Pacific
 : Contact [Dhiraj bhartu](mailto:dhiraj.bhartu@usp.ac.fj)
 
-Gymnasium Himmelsth√ºr, Hildesheim, Deutschland
-: Contact [Frank Sch√ºtte](mailto:fschuett@gymnasium-himmelsthuer.de)
+Gymnasium Himmelstherr, Hildesheim, Deutschland
+: Contact [Frank Schuette](mailto:fschuett@gymnasium-himmelsthuer.de)
 
 Universidad Michoacana de San Nicolas de Hidalgo
-: Contcat [VÌctor Hugo Huerta](mailto:v2hugo@gmail.com)
+: Contcat [Victor Hugo Huerta](mailto:v2hugo@gmail.com)
 
 e-MAIO project, Coimbra Institute of Engineering, Portugal
 : Contact [e_MAIO@isec.pt](mailto:e_MAIO@isec.pt)

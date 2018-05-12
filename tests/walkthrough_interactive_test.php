@@ -14,28 +14,18 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * This file contains tests that walk Stack questions through various sequences
- * of student interaction using interactive behaviour.
- *
- * @package   qtype_stack
- * @copyright 2012 The Open University
- * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-
-
 defined('MOODLE_INTERNAL') || die();
 
 global $CFG;
 require_once($CFG->libdir . '/questionlib.php');
-require_once(__DIR__ . '/test_base.php');
+require_once(__DIR__ . '/fixtures/test_base.php');
 
+// Unit tests for the Stack question type with the interactive behaviour.
+//
+// @copyright 2012 The Open University.
+// @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later.
 
 /**
- * Unit tests for the Stack question type with interactive behaviour.
- *
- * @copyright 2012 The Open University
- * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @group qtype_stack
  */
 class qtype_stack_walkthrough_interactive_testcase extends qtype_stack_walkthrough_test_base {
@@ -322,12 +312,14 @@ class qtype_stack_walkthrough_interactive_testcase extends qtype_stack_walkthrou
                 'ans4' => 'true', '-submit' => 1));
 
         $this->check_current_state(question_state::$gradedpartial);
+        // @codingStandardsIgnoreStart
         // The  correct mark calculation is:
         // odd PRT:     0, 1,   1, penalty 0.4: 0.6
         // even PRT:    0, 0,   1, penalty 0.8: 0.2
         // oddeven PRT: 0, 0.5, 0, penalty 1.2: 0
         // unique PRT:  0, 0,   1, penalty 1:   0
         // Total:                               0.8.
+        // @codingStandardsIgnoreEnd
         $this->check_prt_score('odd', 1, 0);
         $this->check_prt_score('even', 1, 0);
         $this->check_prt_score('oddeven', 0, 0.4);

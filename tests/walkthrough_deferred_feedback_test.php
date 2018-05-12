@@ -14,32 +14,22 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * This file contains tests that walk Stack questions through various sequences
- * of student interaction with deferred feedback behaviour.
- *
- * @package   qtype_stack
- * @copyright 2012 The Open University
- * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-
-
 defined('MOODLE_INTERNAL') || die();
 
 global $CFG;
 require_once($CFG->libdir . '/questionlib.php');
-require_once(__DIR__ . '/test_base.php');
+require_once(__DIR__ . '/fixtures/test_base.php');
 
+
+// Unit tests for the Stack question type with deferred feedback behaviour.
+//
+// Note that none of these tests include clicking the 'Check' button that dfexplicitvaldiation provies.
+// That button is simply @author tjh238 way to trigger a save without navigating to a different page of the quiz.
+//
+// @copyright 2012 The Open University.
+// @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later.
 
 /**
- * Unit tests for the Stack question type.
- *
- * Note that none of these tests include clicking the 'Check' button that
- * dfexplicitvaldiation provies. That is because that button is simply @author tjh238
- * way to trigger a save without navigating to a different page of the quiz.
- *
- * @copyright 2012 The Open University
- * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @group qtype_stack
  */
 class qtype_stack_walkthrough_deferred_feedback_test extends qtype_stack_walkthrough_test_base {
@@ -393,8 +383,21 @@ class qtype_stack_walkthrough_deferred_feedback_test extends qtype_stack_walkthr
         // Create a stack question - we use test0, then replace the input with
         // a dropdown, to get a question that does not require validation.
         $q = test_question_maker::make_question('stack', 'test0');
+        // @codingStandardsIgnoreStart
         $q->inputs['ans1'] = stack_input_factory::make(
-                'dropdown', 'ans1', '2', array('ddl_values' => '1,2'));
+                'dropdown', 'ans1', '[[1,false],[2,true]]');
+        // @codingStandardsIgnoreEnd
+
+        // Dropdowns always return a list, so adapt the PRT to take the first element of ans1.
+        $sans = new stack_cas_casstring('ans1');
+        $sans->get_valid('t');
+        $tans = new stack_cas_casstring('2');
+        $tans->get_valid('t');
+        $node = new stack_potentialresponse_node($sans, $tans, 'EqualComAss');
+        $node->add_branch(0, '=', 0, $q->penalty, -1, '', FORMAT_HTML, 'firsttree-1-F');
+        $node->add_branch(1, '=', 1, $q->penalty, -1, '', FORMAT_HTML, 'firsttree-1-T');
+        $q->prts['firsttree'] = new stack_potentialresponse_tree('firsttree', '', false, 1, null, array($node), 0);
+
         $this->start_attempt_at_question($q, 'deferredfeedback', 1);
 
         // Check the right behaviour is used.
@@ -559,8 +562,8 @@ class qtype_stack_walkthrough_deferred_feedback_test extends qtype_stack_walkthr
         $q = test_question_maker::make_question('stack', 'test0');
 
         // Comment out the following line, and the test passes.
-        $q->questionvariables = 'PrintVect(v):= concat("\\,\\!",ssubst("\\mathbf{j}","YY",   ' .
-            'ssubst("\\mathbf{i}","XX", ssubst(" ","*",StackDISP(subst(XX, ii, subst(YY, jj,v )  ),"")))))';
+        $q->questionvariables = 'PrintVect(v):= sconcat("\\,\\!",ssubst("\\mathbf{j}","YY",   ' .
+            'ssubst("\\mathbf{i}","XX", ssubst(" ","*", stack_disp(subst(XX, ii, subst(YY, jj,v )  ),"")))))';
 
         $q->questiontext = '<p><img style="display: block; margin-left: auto; margin-right: auto;" ' .
                 'src="@@PLUGINFILE@@/inclined-plane.png" alt="" width="164" height="117" /></p>' .

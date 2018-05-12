@@ -1,5 +1,5 @@
 <?php
-// This file is part of Stack - http://stack.bham.ac.uk/
+// This file is part of Stack - http://stack.maths.ed.ac.uk/
 //
 // Stack is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -86,6 +86,9 @@ if (!$vars and !$string) {
     $simp = true;
 }
 
+// Set a value for the "insert stars" flag.  Useful for testing, but should be set to zero normally.
+$stars = 0;
+
 if ($string) {
     $options = new stack_options();
     $options->set_site_defaults();
@@ -93,13 +96,13 @@ if ($string) {
 
     $session = new stack_cas_session(null, $options);
     if ($vars) {
-        $keyvals = new stack_cas_keyval($vars, $options, 0, 't');
+        $keyvals = new stack_cas_keyval($vars, $options, 0, 't', true, $stars);
         $session = $keyvals->get_session();
         $varerrs = $keyvals->get_errors();
     }
 
     if (!$varerrs) {
-        $ct           = new stack_cas_text($string, $session, 0, 't');
+        $ct           = new stack_cas_text($string, $session, 0, 't', true, $stars);
         $displaytext  = $ct->get_display_castext();
         $errs         = $ct->get_errors();
         $debuginfo    = $ct->get_debuginfo();
@@ -145,6 +148,19 @@ echo html_writer::tag('form',
             html_writer::tag('p', html_writer::empty_tag('input',
                     array('type' => 'submit', 'value' => stack_string('chat')))),
         array('action' => $PAGE->url, 'method' => 'post'));
+
+if ($string) {
+    // Display the question variables.
+    echo $OUTPUT->heading(stack_string('questionvariablevalues'), 3);
+    echo html_writer::start_tag('div', array('class' => 'questionvariables'));
+    $variables = $session->get_keyval_representation();
+    $variables = implode(";\n", explode('; ', $variables));
+    if (trim($variables) == '') {
+        $variables .= get_string('none');
+    }
+    echo  html_writer::tag('pre', $variables);
+    echo html_writer::end_tag('div');
+}
 
 if ('' != trim($debuginfo)) {
     echo $OUTPUT->box($debuginfo);

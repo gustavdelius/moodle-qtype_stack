@@ -1,5 +1,5 @@
 <?php
-// This file is part of Stack - http://stack.bham.ac.uk/
+// This file is part of Stack - http://stack.maths.ed.ac.uk/
 //
 // Stack is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Stack.  If not, see <http://www.gnu.org/licenses/>.
 
+defined('MOODLE_INTERNAL') || die();
 
 /**
  * The fact sheets class for STACK.
@@ -66,7 +67,7 @@ abstract class stack_fact_sheets {
     }
 
     /**
-     * This function repaces tags with they HTML value.
+     * This function replaces tags with the HTML value.
      * Note, that at this point we assume we have already validated the text.
      * @param string $text the text in which to expand fact sheet tags.
      * @param qtype_stack_renderer $renderer (options) the STACK renderer, if you have one.

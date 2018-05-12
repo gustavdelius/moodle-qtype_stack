@@ -1,5 +1,5 @@
 <?php
-// This file is part of Stack - http://stack.bham.ac.uk/
+// This file is part of Stack - http://stack.maths.ed.ac.uk/
 //
 // Stack is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -87,6 +87,7 @@ if ($uri == '/') {
     );
 }
 
+
 $links = array();
 foreach ($linkurls as $url => $link) {
     $links[] = '<a href="' . $url . '">' . $link . '</a>';
@@ -110,6 +111,13 @@ if ('Site_map' == $lastseg) {
         $body = stack_docs_no_found($links);
     }
 }
+
+/* Add the version number to the front page.  */
+if ($uri == '/') {
+    $settings = get_config('qtype_stack');
+    $body .= '<br/>'.stack_string('stackDoc_version', $settings->version);
+}
+
 
 $webpix  = $CFG->wwwroot . '/question/type/stack/pix/logo-sm.png';
 $pagetitle = '<img src="' . $CFG->wwwroot . '/question/type/stack/pix/logo-sm.png" style="margin-right: 10px;" />' .
